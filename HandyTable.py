@@ -141,10 +141,12 @@ class HorizontalHeaderMenu(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.filter_edit = QLineEdit()
-        self.filter_tree = TableFilterTree(self.parent.model(), self.column)
+        self.filter_edit     = QLineEdit()
+        self.sort_des_order  = QPushButton("A-Z")
+        self.sort_asc_order  = QPushButton("Z-A")
+        self.filter_tree     = TableFilterTree(self.parent.model(), self.column)
       
-        v                = VBox(self.filter_edit, self.filter_tree)
+        v                = VBox(self.sort_des_order, self.sort_asc_order, self.filter_edit, self.filter_tree)
         self.setLayout(v)
         
     def pop(self, point):
@@ -178,6 +180,8 @@ class HorizontalHeaderMenu(QWidget):
             self.parent.filter_proxy_model.setRegexFilterByColumn(QRegExp(text, Qt.CaseSensitive, QRegExp.FixedString),col))
 
         self.filter_edit.textChanged.connect(self.filter_tree.udpateModel)
+        self.sort_des_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.DescendingOrder))
+        self.sort_asc_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.AscendingOrder))
 
 
     def eventFilter(self, object, event):
@@ -439,6 +443,7 @@ class HandyTableView(TableView):
     def __init__(self, *args, **kwargs):
         TableView.__init__(self, *args, **kwargs)
         self.setSortingEnabled(False)
+        self.sortByColumn(4, Qt.DescendingOrder)
 
 
 table = HandyTableView(model)
