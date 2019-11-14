@@ -167,7 +167,7 @@ class HorizontalHeaderMenu(QWidget):
         self.filter_edit.textChanged.connect(self.filter_tree.udpateModel)
         self.sort_des_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.DescendingOrder))
         self.sort_asc_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.AscendingOrder))
-        self.filter_tree.checkStateChanged.connect(lambda item : self.parent.model().setSelectFilterByColumn(item.itemData, self.column))
+        self.filter_tree.checkStateChanged.connect(lambda item : self.parent.model().setSelectFilterByColumn(*item.itemData, self.column))
 
     def eventFilter(self, object, event):
         if event.type() == QEvent.WindowDeactivate:
@@ -389,13 +389,20 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         self.filters[column] = { 'regex' : None, 'selector' : [], 'data' : []}
 
     def setRegexFilterByColumn(self, regex, column):
-        self.initFilterColumn(column)
+        if not (column in self.filters):
+            self.initFilterColumn(column)
         self.filters[column]['regex'] = regex
         self.invalidateFilter()
 
     def setSelectFilterByColumn(self, data, column):
-        self.initFilterColumn(column)
-        self.filters[column]['selector'] = data
+        if not (column in self.filters):
+            self.initFilterColumn(column)
+
+        if data in self.filters[column]['selector']:
+            self.filters[column]['selector'].remove(data)
+        else:
+            self.filters[column]['selector'].append(data)
+        
         self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
@@ -410,7 +417,6 @@ class SortFilterProxyModel(QSortFilterProxyModel):
                 if regex:
                     if not regex.indexIn(text) != -1:
                         return False
-
                 if selector:
                     if text in selector:
                         return False
