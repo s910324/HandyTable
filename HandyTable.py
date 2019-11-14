@@ -157,8 +157,10 @@ class HorizontalHeaderMenu(QWidget):
         self.animation.start()
 
         if self.column in self.parent.filter_proxy_model.filters:
-            filter_pattern = self.parent.filter_proxy_model.filters[self.column]['regex'].pattern()
-            self.filter_edit.setText(filter_pattern)
+            filter_regex = self.parent.filter_proxy_model.filters[self.column]['regex']
+            if filter_regex:
+                filter_pattern = filter_regex.pattern()
+                self.filter_edit.setText(filter_pattern)
             
 
         self.filter_edit.textChanged.connect(lambda text = self.filter_edit.text(), col = self.column: 
@@ -377,8 +379,6 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, *args, **kwargs):
         QSortFilterProxyModel.__init__(self, *args, **kwargs)
         self.filters = {}
-        # self.filter_result = []
-        self.k = ['23',  '132']
 
     def setSourceModel(self, model):
         self.filter_result = [False for i in range(model.rowCount())]
