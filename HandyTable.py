@@ -90,23 +90,7 @@ class DataItem(QStandardItem):
         # self.setCheckable(True)
         # self.setCheckState(Qt.Checked)
 
-app = QApplication([])
-window = QWidget()
-k = []
-with open('./mockup.csv', newline='') as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-    for row in spamreader:
-        k.append(row)
-    
-model = DataItemModel()
 
-model.setDataFrame(k, header= True)
-
-
-layout = QVBoxLayout(window)
-line_edit = QLineEdit()
-# line_edit.textChanged.connect(filter_proxy_model.setFilterRegExp)
-layout.addWidget(line_edit)
 
 class TableView(QTableView):
     def __init__(self, model, parent = None, *args):
@@ -141,13 +125,14 @@ class HorizontalHeaderMenu(QWidget):
         self.initUI()
 
     def initUI(self):
+
+        self.sort_des_order  = QPushButton("Sort Z to A")
+        self.sort_asc_order  = QPushButton("Sort A to Z")
+        self.sort_cust_order = QPushButton("Custom Sort")
         self.filter_edit     = QLineEdit()
-        self.sort_des_order  = QPushButton("A-Z")
-        self.sort_asc_order  = QPushButton("Z-A")
+        self.clear_filter    = QPushButton("Clear filter")
         self.filter_tree     = TableFilterTree(self.parent.model(), self.column)
-      
-        v                = VBox(self.sort_des_order, self.sort_asc_order, self.filter_edit, self.filter_tree)
-        self.setLayout(v)
+        self.setLayout(VBox(self.sort_asc_order, self.sort_des_order, self.sort_cust_order, self.filter_edit,  self.clear_filter, self.filter_tree))
         
     def pop(self, point):
         x, y           = point.x(), point.y()
@@ -182,7 +167,7 @@ class HorizontalHeaderMenu(QWidget):
         self.filter_edit.textChanged.connect(self.filter_tree.udpateModel)
         self.sort_des_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.DescendingOrder))
         self.sort_asc_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.AscendingOrder))
-
+        self.filter_tree.checkStateChanged.connect(lambda item : self.parent.model().setSelectFilterByColumn(item.itemData, self.column))
 
     def eventFilter(self, object, event):
         if event.type() == QEvent.WindowDeactivate:
@@ -193,6 +178,7 @@ class HorizontalHeaderMenu(QWidget):
 
 
 class TableFilterTree(QTreeView):
+    checkStateChanged = pyqtSignal(QStandardItem)
     def __init__(self, model, column, parent = None):
         super().__init__()
         self.setHeaderHidden(True)
@@ -201,6 +187,7 @@ class TableFilterTree(QTreeView):
         self.source_model = model
         self.udpateModel()
         self.header().resizeSection(0, 300)
+
         
 
     def udpateModel(self):
@@ -213,6 +200,7 @@ class TableFilterTree(QTreeView):
         # self.model().setCheckState(self.model().index(0, 0, QModelIndex()), Qt.Checked)
         self.model().setCheckState(self.model().index(1, 0, QModelIndex()), Qt.Checked)
         # self.model().setCheckState(self.model().index(2, 0, QModelIndex()), Qt.Checked)
+        self.model().checkStateChanged.connect(lambda item : self.checkStateChanged.emit(item))
 
     def k(self, index):
         self.model().flipCheckState(index)
@@ -224,6 +212,7 @@ class TableFilterTree(QTreeView):
         
         # unable to update childs and parent
 class TreeModel(QAbstractItemModel):
+    checkStateChanged = pyqtSignal(QStandardItem)
     def __init__(self, data, parent=None):
         super(TreeModel, self).__init__(parent)
 
@@ -253,12 +242,14 @@ class TreeModel(QAbstractItemModel):
         return item.data(index.column())
 
     def flipCheckState(self, index):
-        print (index.row(), index.column(), index.parent(), index.internalPointer(), index.internalId())
+
+        # print (index.row(), index.column(), index.parent(), index.internalPointer(), index.internalId())
         if not index.isValid():
             return None
 
         item = index.internalPointer()
         self.setCheckState(index, Qt.Unchecked if item.checkState() == Qt.Checked else Qt.Checked)
+        self.checkStateChanged.emit(item)
 
     def setCheckState(self, index, state):
         if not index.isValid():
@@ -342,7 +333,7 @@ class TreeItem(QStandardItem):
         self.itemData   = data
         self.childItems = []
         self.setCheckable(True)
-        self.state      = Qt.Unchecked
+        self.state      = Qt.Checked
  
     def checkState(self):
         return self.state
@@ -395,7 +386,6 @@ class SortFilterProxyModel(QSortFilterProxyModel):
 
 
     def initFilterColumn(self, column):
-        #self.filters[column] = { 'regex' : None, 'selector' : ['23',  '32'], 'data' : []}
         self.filters[column] = { 'regex' : None, 'selector' : [], 'data' : []}
 
     def setRegexFilterByColumn(self, regex, column):
@@ -403,9 +393,9 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         self.filters[column]['regex'] = regex
         self.invalidateFilter()
 
-    def setSelectFilterByColumn(self, selector, column):
+    def setSelectFilterByColumn(self, data, column):
         self.initFilterColumn(column)
-        self.filters[column]['selector'] = selector
+        self.filters[column]['selector'] = data
         self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
@@ -415,16 +405,14 @@ class SortFilterProxyModel(QSortFilterProxyModel):
             selector = filter_item['selector']
             ix       = self.sourceModel().index(source_row, key, source_parent)
 
-            if ix.isValid():# and self.filter_result[ix.row()] == False:
+            if ix.isValid():
                 text = self.sourceModel().data(ix)
                 if regex:
                     if not regex.indexIn(text) != -1:
-                        # self.filter_result[ix.row()] = True
                         return False
 
                 if selector:
-                    if text not in self.k:
-                        # self.filter_result[ix.row()] = True
+                    if text in selector:
                         return False
 
                 filter_item['data'].append(text)
@@ -439,17 +427,29 @@ class SortFilterProxyModel(QSortFilterProxyModel):
             return None
         return [ self.data(self.index(row,col)) for row in range(self.rowCount())]
 
-class HandyTableView(TableView):
-    def __init__(self, *args, **kwargs):
-        TableView.__init__(self, *args, **kwargs)
-        self.setSortingEnabled(False)
-        self.sortByColumn(4, Qt.DescendingOrder)
+
+if __name__ == '__main__':
+    app = QApplication([])
+    window = QWidget()
+    k = []
+    with open('./mockup.csv', newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        for row in spamreader:
+            k.append(row)
+        
+    model = DataItemModel()
+    model.setDataFrame(k, header= True)
 
 
-table = HandyTableView(model)
-layout.addWidget(table)
-window.resize(1000, 800)
-window.show()
-app.exec_()
+    layout = QVBoxLayout(window)
+    line_edit = QLineEdit()
+    # line_edit.textChanged.connect(filter_proxy_model.setFilterRegExp)
+    layout.addWidget(line_edit)
+
+    table = TableView(model)
+    layout.addWidget(table)
+    window.resize(1000, 800)
+    window.show()
+    app.exec_()
 
 
