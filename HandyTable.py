@@ -169,7 +169,7 @@ class HorizontalHeaderMenu(QWidget):
         self.filter_edit.textChanged.connect(self.filter_tree.udpateModel)
         self.sort_des_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.DescendingOrder))
         self.sort_asc_order.clicked.connect(lambda : self.parent.sortByColumn(self.column, Qt.AscendingOrder))
-        self.filter_tree.checkStateChanged.connect(lambda item : self.parent.model().setSelectFilterByColumn(*item.itemData, self.column))
+        self.filter_tree.checkStateChanged.connect(lambda item : self.parent.model().setExclusionFilterByColumn(item.data(0), self.column))
 
     def eventFilter(self, object, event):
         if event.type() == QEvent.WindowDeactivate:
@@ -191,18 +191,23 @@ class TableFilterTree(QTreeView):
         self.header().resizeSection(0, 300)
 
         
-
+    #multiple exclusion is still not function properly -------------------------------------------V
     def udpateModel(self):
-        # model = DataItemModel()
-        # model.setDataFrame(sorted(set(self.source_model.columnData(self.column))))
-        model = TreeModel(sorted(set(self.source_model.columnData(self.column))))
-        self.setModel(model)
-        self.expand(model.index(0,0, QModelIndex()))
+        active_data   = self.source_model.columnData(self.column)
+        excluded_data = self.source_model.columnExcludedData(self.column)
+        full_data     = sorted(set([*active_data, *excluded_data]))
+        model         = TreeModel(full_data)
+        toplevel_item = model.index(0,0, QModelIndex())
+        
         self.clicked.connect(lambda index : self.k(index))
-        # self.model().setCheckState(self.model().index(0, 0, QModelIndex()), Qt.Checked)
-        self.model().setCheckState(self.model().index(1, 0, QModelIndex()), Qt.Checked)
-        # self.model().setCheckState(self.model().index(2, 0, QModelIndex()), Qt.Checked)
-        self.model().checkStateChanged.connect(lambda item : self.checkStateChanged.emit(item))
+        for data in excluded_data:
+            i = full_data.index(data)
+            model.flipCheckState(model.index(i, 0, toplevel_item))
+
+
+        model.checkStateChanged.connect(lambda item : self.checkStateChanged.emit(item))
+        self.setModel(model)
+        self.expand(toplevel_item)
 
     def k(self, index):
         self.model().flipCheckState(index)
@@ -386,7 +391,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
 
 
     def initFilterColumn(self, column):
-        self.filters[column] = { 'regex' : None, 'selector' : [], 'data' : []}
+        self.filters[column] = { 'regex' : None, 'excluded' : [], 'data' : []}
 
     def setRegexFilterByColumn(self, regex, column):
         if not (column in self.filters):
@@ -394,14 +399,14 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         self.filters[column]['regex'] = regex
         self.invalidateFilter()
 
-    def setSelectFilterByColumn(self, data, column):
+    def setExclusionFilterByColumn(self, data, column):
         if not (column in self.filters):
             self.initFilterColumn(column)
 
-        if data in self.filters[column]['selector']:
-            self.filters[column]['selector'].remove(data)
+        if data in self.filters[column]['excluded']:
+            self.filters[column]['excluded'].remove(data)
         else:
-            self.filters[column]['selector'].append(data)
+            self.filters[column]['excluded'].append(data)
         
         self.invalidateFilter()
 
@@ -409,7 +414,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
 
         for key, filter_item in self.filters.items():
             regex    = filter_item['regex']
-            selector = filter_item['selector']
+            excluded = filter_item['excluded']
             ix       = self.sourceModel().index(source_row, key, source_parent)
 
             if ix.isValid():
@@ -417,8 +422,8 @@ class SortFilterProxyModel(QSortFilterProxyModel):
                 if regex:
                     if not regex.indexIn(text) != -1:
                         return False
-                if selector:
-                    if text in selector:
+                if excluded:
+                    if text in excluded:
                         return False
 
                 filter_item['data'].append(text)
@@ -433,6 +438,13 @@ class SortFilterProxyModel(QSortFilterProxyModel):
             return None
         return [ self.data(self.index(row,col)) for row in range(self.rowCount())]
 
+    def columnExcludedData(self, col, role =Qt.EditRole):
+        if not col < self.columnCount():
+            return None
+        try:
+            return self.filters[col]['excluded']
+        except KeyError:
+            return []
 
 if __name__ == '__main__':
     app = QApplication([])
