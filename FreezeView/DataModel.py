@@ -167,6 +167,8 @@ class DataItemModel(QStandardItemModel):
         else:
             item.style.font_size = 14
 
+    
+
 class DataItem(QStandardItem):
     def __init__(self, data = None):
         QStandardItem.__init__(self)

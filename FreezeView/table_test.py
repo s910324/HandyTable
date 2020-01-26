@@ -365,7 +365,75 @@ class TableWidget(QTableView):
         self.model().set_cell_style(0, 0)
         self.viewport().update()      #essential, themeing take effect after view port update
     
+    def selected_cells(self):
+        result = []
+        for selected_range in self.selectionModel().selection():
+            for row_index in range(selected_range.top(), selected_range.bottom()+1):
+                for column_index in range(selected_range.left(), selected_range.right()+1):
+                    result.append(self.model().item(row_index, column_index))
+        return result
 
+    def set_selection_bold(self):
+        if all([cell.style.font_bold == True for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.font_bold = False
+        else:
+            for cell in self.selected_cells():
+                cell.style.font_bold = True
+        self.viewport().update()
+
+    def set_selection_italic(self):
+        if all([cell.style.font_italic == True for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.font_italic = False
+        else:
+            for cell in self.selected_cells():
+                cell.style.font_italic = True
+        self.viewport().update()
+
+    def set_selection_underline(self):
+        if all([cell.style.font_underline == True for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.font_underline = False
+        else:
+            for cell in self.selected_cells():
+                cell.style.font_underline = True
+        self.viewport().update()        
+
+    def set_selection_strikeline(self):
+        if all([cell.style.font_strike == True for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.font_strike = False
+        else:
+            for cell in self.selected_cells():
+                cell.style.font_strike = True
+        self.viewport().update()    
+
+    def set_selection_align_left(self):
+        if all([ (cell.style.align & Qt.AlignLeft) == Qt.AlignLeft for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignVertical_Mask ) | Qt.AlignRight
+        else:
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignVertical_Mask ) | Qt.AlignLeft
+        self.viewport().update()   
+
+    def set_selection_align_center(self):
+        if all([ (cell.style.align & Qt.AlignHCenter) == Qt.AlignHCenter for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignVertical_Mask ) | Qt.AlignRight
+        else:
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignVertical_Mask ) | Qt.AlignHCenter
+        self.viewport().update()  
+
+    def set_selection_align_right(self):
+        if all([ (cell.style.align & Qt.AlignRight) == Qt.AlignRight for cell in self.selected_cells()]):
+            pass
+        else:
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignVertical_Mask ) | Qt.AlignRight
+        self.viewport().update()   
 
 class DebugWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -423,18 +491,19 @@ class DebugWindow(QMainWindow):
 
     def init_theme_toolbar(self):
         toolbar = QToolBar("Cell themeing")
-        self.bind(toolbar, "set bold",      lambda _ : print("OK"))
-        self.bind(toolbar, "set italic",    lambda _ : print("OK"))
-        self.bind(toolbar, "set underline", lambda _ : print("OK"))
-        self.bind(toolbar, "align left",    lambda _ : print("OK"))
-        self.bind(toolbar, "align center",  lambda _ : print("OK"))
-        self.bind(toolbar, "align right",   lambda _ : print("OK"))
-        self.bind(toolbar, "align top",     lambda _ : print("OK"))
-        self.bind(toolbar, "align middle",  lambda _ : print("OK"))
-        self.bind(toolbar, "align bottom",  lambda _ : print("OK"))
-        self.bind(toolbar, "set Font",      lambda _ : print("OK"))
-        self.bind(toolbar, "set size",      lambda _ : print("OK"))
-        self.bind(toolbar, "set bold",      lambda _ : self.table.selection_check())
+        self.bind(toolbar, "set bold",       lambda _ : self.table.set_selection_bold())
+        self.bind(toolbar, "set italic",     lambda _ : self.table.set_selection_italic())
+        self.bind(toolbar, "set underline",  lambda _ : self.table.set_selection_underline())
+        self.bind(toolbar, "set strikeline", lambda _ : self.table.set_selection_strikeline())
+        self.bind(toolbar, "align left",     lambda _ : self.table.set_selection_align_left())
+        self.bind(toolbar, "align center",   lambda _ : self.table.set_selection_align_center())
+        self.bind(toolbar, "align right",    lambda _ : self.table.set_selection_align_right())
+        self.bind(toolbar, "align top",      lambda _ : print("OK"))
+        self.bind(toolbar, "align middle",   lambda _ : print("OK"))
+        self.bind(toolbar, "align bottom",   lambda _ : print("OK"))
+        self.bind(toolbar, "set Font",       lambda _ : print("OK"))
+        self.bind(toolbar, "set size",       lambda _ : print("OK"))
+        self.bind(toolbar, "set bold",       lambda _ : self.table.set_selection_bold())
         return toolbar
     
     def bind(self, toolbar, text, function):

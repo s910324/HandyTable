@@ -105,7 +105,7 @@ class StyleObject(QObject):
 
     @font_underline.setter
     def font_underline(self, underline):
-        self._font.setUnderline(strike)
+        self._font.setUnderline(underline)
         self.font_changed.emit(self._font)
 
     @property
