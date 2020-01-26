@@ -42,7 +42,6 @@ class TableWidget(QTableView):
         self.connect_header_resize_event()
         # self.model().dataChanged.connect(self.updateDelegates)
 
-        
     def enable_forzen_view(self, row_index, column_index):
         if self.froze_view_enabled == True : return
         self.freeze_index         = [row_index, column_index]
@@ -68,7 +67,6 @@ class TableWidget(QTableView):
             elif not any([self.top_frozen_view, self.corner_frozen_view]):
                 self.viewport().stackUnder(self.left_frozen_view)
 
-
         if self.top_frozen_view    : self.top_frozen_view.connect_to_views()
         if self.left_frozen_view   : self.left_frozen_view.connect_to_views()
         if self.corner_frozen_view : self.corner_frozen_view.connect_to_views()
@@ -87,7 +85,6 @@ class TableWidget(QTableView):
     def connect_header_resize_event(self):
         self.horizontalHeader().sectionResized.connect(lambda index, osize, nsize : [ self.horizontalHeader().resizeSection(col, nsize) for col in self.selected_columns() ])
         self.verticalHeader().sectionResized.connect(  lambda index, osize, nsize : [   self.verticalHeader().resizeSection(row, nsize) for row in    self.selected_rows() ])
-
         self.horizontalHeader().sectionHandleDoubleClicked.connect(lambda _ : [ self.resizeColumnToContents(col) for col in self.selected_columns() ])
         self.verticalHeader().sectionHandleDoubleClicked.connect(  lambda _ : [   self.resizeRowToContents(row) for row in    self.selected_rows() ])
 
@@ -110,7 +107,6 @@ class TableWidget(QTableView):
 
     def selection_check(self):
         print (self.model()._data_frame)
-
         # c = self.cell_item_in_selected_ranges(self.selectionModel().selection())
         # for cell in reduce(lambda i, j : i + j, c):
 
@@ -288,7 +284,6 @@ class TableWidget(QTableView):
             return wrapper
         return decorator
 
-
     @freezeview_refresh
     def insert_row_at(self, row_index, row_counts = 1):
         self.model().insert_row_at(row_index)
@@ -323,10 +318,8 @@ class TableWidget(QTableView):
             style += ("%s : %s; " % (css_attribute, argv[css_attribute]))
         stylesheet % styles
 
-
     def showEvent(self, event):
         QTableView.showEvent(self, event)
-
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Copy):
@@ -338,11 +331,8 @@ class TableWidget(QTableView):
         else:
             QTableView.keyPressEvent(self, event)
 
-
-        
     def resizeEvent(self, event):
         self.update_data_model()    
-    
 
     def mousePressEvent (self, event):
         QTableView.mousePressEvent(self, event)
