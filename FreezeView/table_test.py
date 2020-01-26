@@ -435,6 +435,38 @@ class TableWidget(QTableView):
                 cell.style.align = (cell.style.align & Qt.AlignVertical_Mask ) | Qt.AlignRight
         self.viewport().update()   
 
+    def set_selection_align_top(self):
+        if all([ (cell.style.align & Qt.AlignTop) == Qt.AlignTop for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignHorizontal_Mask ) | Qt.AlignVCenter
+        else:
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignHorizontal_Mask ) | Qt.AlignTop
+        self.viewport().update()   
+
+    def set_selection_align_middle(self):
+        if all([ (cell.style.align & Qt.AlignVCenter) == Qt.AlignVCenter for cell in self.selected_cells()]):
+            pass
+        else:
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignHorizontal_Mask ) | Qt.AlignVCenter
+        self.viewport().update()  
+
+    def set_selection_align_bottom(self):
+        if all([ (cell.style.align & Qt.AlignBottom) == Qt.AlignBottom for cell in self.selected_cells()]):
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignHorizontal_Mask ) | Qt.AlignVCenter
+        else:
+            for cell in self.selected_cells():
+                cell.style.align = (cell.style.align & Qt.AlignHorizontal_Mask ) | Qt.AlignBottom
+        self.viewport().update()   
+
+    def set_selection_font(self, font):
+        for cell in self.selected_cells():
+            cell.style.font_family = font
+
+        self.viewport().update() 
+
 class DebugWindow(QMainWindow):
     def __init__(self, parent=None):
         super(DebugWindow, self).__init__(parent)
@@ -498,12 +530,14 @@ class DebugWindow(QMainWindow):
         self.bind(toolbar, "align left",     lambda _ : self.table.set_selection_align_left())
         self.bind(toolbar, "align center",   lambda _ : self.table.set_selection_align_center())
         self.bind(toolbar, "align right",    lambda _ : self.table.set_selection_align_right())
-        self.bind(toolbar, "align top",      lambda _ : print("OK"))
-        self.bind(toolbar, "align middle",   lambda _ : print("OK"))
-        self.bind(toolbar, "align bottom",   lambda _ : print("OK"))
-        self.bind(toolbar, "set Font",       lambda _ : print("OK"))
-        self.bind(toolbar, "set size",       lambda _ : print("OK"))
-        self.bind(toolbar, "set bold",       lambda _ : self.table.set_selection_bold())
+        self.bind(toolbar, "align top",      lambda _ : self.table.set_selection_align_top())
+        self.bind(toolbar, "align middle",   lambda _ : self.table.set_selection_align_middle())
+        self.bind(toolbar, "align bottom",   lambda _ : self.table.set_selection_align_bottom())
+        self.bind(toolbar, "set color",      lambda _ : print("OK"))
+        self.bind(toolbar, "set background", lambda _ : print("OK"))
+        font_combo = QFontComboBox()
+        font_combo.currentFontChanged.connect(lambda font : self.table.set_selection_font(font.family()))
+        toolbar.addWidget(font_combo)
         return toolbar
     
     def bind(self, toolbar, text, function):
