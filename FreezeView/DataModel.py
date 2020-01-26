@@ -18,15 +18,14 @@ class DataItemModel(QStandardItemModel):
         self.parent                  = parent
         self.horizontal_header_items = {}
         self._data_frame             = pandas.DataFrame()
-        self.data_theme_deligate     = DataThemeDelegate(self.parent)
+        self.data_theme_deligate     = DataThemeDelegate()
         self.format_theme            = ['Cell[style_group=red]::item {background-color: #FF0033; font-style: italic;}', 'Cell[style_group=green]::item {background-color: green;}']
         self.dataChanged.connect( lambda x, y: self.update_cell_data(x.row(), x.column()) )
         
 
     def set_data(self, data, copy_data = False):
         data_frame       = data if isinstance(data, pandas.core.frame.DataFrame) else pandas.DataFrame(data)
-        self._data_frame = data_frame.copy() if copy_data else data_frame
-
+        self._data_frame = data_frame.copy() if copy_data else data_frame 
         self.clear()
         for row_index in range(len(self._data_frame)):
             self.appendRow([DataItem(data) for data in self._data_frame.iloc[row_index]])
@@ -168,23 +167,6 @@ class DataItemModel(QStandardItemModel):
         else:
             item.style.font_size = 14
 
-        
-
-
-
-class Cell(QWidget):
-    editingFinished = pyqtSignal()
-    def __init__(self, parent):
-        super(Cell, self).__init__(parent)
-        f = self.font()
-        f.setPointSize(50)
-        # self.setStyleSheet("Cell::item {background-color: #FF0033; font-style: italic; font-size: 225px;}")
-    def set_style(self, style_group  = 'default'):
-        self.setProperty('style_group', style_group)
-
-
-
-
 class DataItem(QStandardItem):
     def __init__(self, data = None):
         QStandardItem.__init__(self)
@@ -197,9 +179,6 @@ class DataItem(QStandardItem):
         self.setData(data, self.role)
         self.connect_style()
         self._set_text_color("#AA33FF") # takes no effect
-
-
-
 
     def setData(self, data, role = None):
 
@@ -293,7 +272,6 @@ class DataThemeDelegate(QStyledItemDelegate):
     ''' this is a display object, responsble to cell text formatting, styling params are stored with Style Object and rendered by DataThemeDelegate'''
     def __init__(self, *args):
         super(DataThemeDelegate, self).__init__(*args)
-        self.cell = Cell(self.parent())
         self.text = ""
 
     def createEditor(self, parent, option, index): # change text style while at editing mode
@@ -341,8 +319,8 @@ class DataThemeDelegate(QStyledItemDelegate):
         self.draw_cell_type_hint (painter, option, data_type)
 
         style = option.widget.style() if option.widget else QApplication.style()
-        style.unpolish(self.cell)
-        style.polish(self.cell)
+        # style.unpolish(self.cell)
+        # style.polish(self.cell)
 
     def draw_display_text(self, painter, option, index, font, font_color, align):
         painter.setPen(QColor(font_color))

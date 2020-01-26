@@ -1,8 +1,3 @@
-import os
-import sys
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore    import *
-from PyQt5.QtGui     import *
 
 class HHeaderItem(object):
 	def __init__(self, number = -1, axis = '-', name = '', function = None, parent = None):

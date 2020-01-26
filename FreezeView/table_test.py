@@ -22,8 +22,8 @@ class TableWidget(QTableView):
     trigger = pyqtSignal()
     rows_removed         = pyqtSignal(list)
     columns_removed      = pyqtSignal(list)
-    row_inserted         = pyqtSignal(list)
-    column_inserted      = pyqtSignal(list)
+    row_inserted         = pyqtSignal(int)
+    column_inserted      = pyqtSignal(int)
     data_updated         = pyqtSignal(DataItemModel)
     vscroll_mode_changed = pyqtSignal(QAbstractItemView.ScrollMode)
     hscroll_mode_changed = pyqtSignal(QAbstractItemView.ScrollMode)
@@ -39,21 +39,22 @@ class TableWidget(QTableView):
         self.update_data_model()
         self.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.setVerticalScrollMode(  QAbstractItemView.ScrollPerPixel)
+        self.connect_header_resize_event()
         # self.model().dataChanged.connect(self.updateDelegates)
 
         
     def enable_forzen_view(self, row_index, column_index):
         if self.froze_view_enabled == True : return
-        self.freeze_index         = (row_index, column_index)
+        self.freeze_index         = [row_index, column_index]
         start_row_index           = self.rowAt(0)
         start_column_index        = self.columnAt(0)
         print ("Freezeview active at row/col:", row_index, column_index)
-  
+
         self.cursor_tracker       = CursorTracker(self)
         self.top_frozen_view      = FreezeView(FreezeView.top,    start_column_index, self.column_counts(), start_row_index,         row_index, self) if row_index                        > 0 else None
         self.left_frozen_view     = FreezeView(FreezeView.left,   start_column_index,         column_index, start_row_index, self.row_counts(), self) if column_index                     > 0 else None
         self.corner_frozen_view   = FreezeView(FreezeView.corner, start_column_index,         column_index, start_row_index,         row_index, self) if (column_index > 0 and row_index) > 0 else None
-        
+
         if any([self.top_frozen_view, self.left_frozen_view, self.corner_frozen_view]):
             self.froze_view_enabled   = True
             if all([self.top_frozen_view, self.left_frozen_view, self.corner_frozen_view]):
@@ -68,35 +69,28 @@ class TableWidget(QTableView):
                 self.viewport().stackUnder(self.left_frozen_view)
 
 
+        if self.top_frozen_view    : self.top_frozen_view.connect_to_views()
+        if self.left_frozen_view   : self.left_frozen_view.connect_to_views()
+        if self.corner_frozen_view : self.corner_frozen_view.connect_to_views()
+
     def disable_frozen_view(self):
         if self.top_frozen_view    : self.top_frozen_view.disconnect_to_views()
         if self.left_frozen_view   : self.left_frozen_view.disconnect_to_views()
         if self.corner_frozen_view : self.corner_frozen_view.disconnect_to_views()
+        self.freeze_index       = None
         self.cursor_tracker     = None
         self.top_frozen_view    = None
         self.left_frozen_view   = None
         self.corner_frozen_view = None
         self.froze_view_enabled = False
 
+    def connect_header_resize_event(self):
+        self.horizontalHeader().sectionResized.connect(lambda index, osize, nsize : [ self.horizontalHeader().resizeSection(col, nsize) for col in self.selected_columns() ])
+        self.verticalHeader().sectionResized.connect(  lambda index, osize, nsize : [   self.verticalHeader().resizeSection(row, nsize) for row in    self.selected_rows() ])
 
-    def connect_frozen_view(self):
-        if self.froze_view_enabled:
-            if self.top_frozen_view    : self.top_frozen_view.connect_to_views()
-            if self.left_frozen_view   : self.left_frozen_view.connect_to_views()
-            if self.corner_frozen_view : self.corner_frozen_view.connect_to_views()
+        self.horizontalHeader().sectionHandleDoubleClicked.connect(lambda _ : [ self.resizeColumnToContents(col) for col in self.selected_columns() ])
+        self.verticalHeader().sectionHandleDoubleClicked.connect(  lambda _ : [   self.resizeRowToContents(row) for row in    self.selected_rows() ])
 
-    def freezeview_refresh(func): 
-        def switcher(self, *args, **kwargs): 
-            print(func)
-            if self.froze_view_enabled:
-                
-                self.disable_frozen_view()  
-                func(self, *args, **kwargs) 
-                self.enable_forzen_view(*self.freeze_index)
-            else:
-                func(self, *args, **kwargs)
-        return switcher
-        
     def row_counts(self):
         return self.model().rowCount(self)
 
@@ -105,7 +99,6 @@ class TableWidget(QTableView):
 
     def set_data(self, data):
         if data:
-            # self.model().data_cached = data
             self.model().set_data(data)
             self.update_data_model()
     
@@ -113,8 +106,7 @@ class TableWidget(QTableView):
         selection = self.selectionModel().selection()
         if len(selection)==1:
             selected_range = selection[0]
-            self.enable_forzen_view(selected_range.top(), selected_range.left())
-            self.connect_frozen_view()      
+            self.enable_forzen_view(selected_range.top(), selected_range.left())  
 
     def selection_check(self):
         print (self.model()._data_frame)
@@ -266,30 +258,56 @@ class TableWidget(QTableView):
             self.insert_row_at(selected+1)
             self.selectRow(selected)
 
+    def remove_selected_rows(self):
+        self.remove_rows(self.selected_rows())
+
+    def remove_selected_columns(self):
+        self.remove_columns(self.selected_columns())
+
+    def freezeview_refresh(argument): 
+        def decorator(func):
+            def wrapper(self, *args, **kwargs): 
+                if self.froze_view_enabled:
+                    freeze_index = self.freeze_index
+                    row_col_list = args[0]
+                    self.disable_frozen_view()  
+                    func(self, *args, **kwargs) 
+
+                    if argument == "add_row":
+                        freeze_index[0] += sum([ 1  for row in row_col_list if row < freeze_index[0] ])
+                    if argument == "add_column":
+                        freeze_index[1] += sum([ 1  for col in row_col_list if col < freeze_index[1] ])
+                    if argument == "remove_rows":
+                        freeze_index[0] += sum([-1  for row in row_col_list if row < freeze_index[0] ])
+                    if argument == "remove_columns":
+                        freeze_index[1] += sum([-1  for col in row_col_list if col < freeze_index[1] ])
+
+                    self.enable_forzen_view(*freeze_index)
+                else:
+                    func(self, *args, **kwargs)
+            return wrapper
+        return decorator
+
+
+    @freezeview_refresh
     def insert_row_at(self, row_index, row_counts = 1):
         self.model().insert_row_at(row_index)
-        self.row_inserted.emit(row_index)
+        self.row_inserted.emit(row_index)     
         self.update_data_model()    
 
+    @freezeview_refresh
     def insert_column_at(self, column_index, column_counts = 1):
         self.model().insert_column_at(column_index)
         self.column_inserted.emit(column_index)
         self.update_data_model()
 
-    def remove_selected_rows(self):
-        self.remove_rows(self.selected_rows())
-
-
-    def remove_selected_columns(self):
-        self.remove_columns(self.selected_columns())
-
-    @freezeview_refresh
+    @freezeview_refresh("remove_rows")
     def remove_rows(self, row_list):
         self.model().remove_rows(row_list)
         self.rows_removed.emit(row_list)
         self.update_data_model()
 
-    @freezeview_refresh
+    @freezeview_refresh("remove_columns")
     def remove_columns(self, column_list):
         self.model().remove_columns(column_list)
         self.columns_removed.emit(column_list)
@@ -437,11 +455,11 @@ class DebugWindow(QMainWindow):
 def Debugger():
     app  = QApplication(sys.argv)
     form = DebugWindow()
-    QFontDatabase.addApplicationFont("./res/font/Inconsolata-Regular.ttf");
-    f = QFile("./stylesheet.css")
-    f.open(QFile.ReadOnly | QFile.Text)
-    ts = QTextStream(f)
-    stylesheet = ts.readAll()
+    # QFontDatabase.addApplicationFont("./res/font/Inconsolata-Regular.ttf");
+    # f = QFile("./stylesheet.css")
+    # f.open(QFile.ReadOnly | QFile.Text)
+    # ts = QTextStream(f)
+    # stylesheet = ts.readAll()
     # app.setStyleSheet(stylesheet)
     form.show()
     app.exec_()

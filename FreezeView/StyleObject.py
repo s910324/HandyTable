@@ -17,13 +17,15 @@ class StyleObject(QObject):
         self._background       =  QBrush(QColor("#FFFFFF"), Qt.SolidPattern)
         self._background_brush =  QBrush(QColor("#FFFFFF"), Qt.SolidPattern)
         self._type_hint_color  =  QPen(QColor("#FFFFFF"))
-        self._font_color       =  QColor("#FF0000")
+        self._font_color       =  QColor("#000000")
         self._font             =  QFont()
         self._align            =  Qt.AlignRight | Qt.AlignVCenter
         self._border_style     =  Qt.SolidLine
         self._border_width     =  0
         self._bolder_color     =  "#000000"
-        self.font_size = 14
+
+        self.font_color  =  QColor("#88cc00")
+        self.font_size   = 12
         self.font_family = "consolas"
 
     @property
