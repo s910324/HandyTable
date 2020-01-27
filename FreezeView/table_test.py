@@ -467,6 +467,22 @@ class TableWidget(QTableView):
 
         self.viewport().update() 
 
+    def set_selection_color(self):
+        color = QColorDialog.getColor()
+        if color:
+            for cell in self.selected_cells():
+                cell.style.font_color = color
+
+            self.viewport().update() 
+
+    def set_selection_background(self):
+        color = QColorDialog.getColor()
+        if color:
+            for cell in self.selected_cells():
+                cell.style.background = QBrush(QColor(color))
+
+            self.viewport().update() 
+
 class DebugWindow(QMainWindow):
     def __init__(self, parent=None):
         super(DebugWindow, self).__init__(parent)
@@ -533,8 +549,9 @@ class DebugWindow(QMainWindow):
         self.bind(toolbar, "align top",      lambda _ : self.table.set_selection_align_top())
         self.bind(toolbar, "align middle",   lambda _ : self.table.set_selection_align_middle())
         self.bind(toolbar, "align bottom",   lambda _ : self.table.set_selection_align_bottom())
-        self.bind(toolbar, "set color",      lambda _ : print("OK"))
-        self.bind(toolbar, "set background", lambda _ : print("OK"))
+        self.bind(toolbar, "set color",      lambda _ : self.table.set_selection_color())
+        self.bind(toolbar, "set background", lambda _ : self.table.set_selection_background())
+
         font_combo = QFontComboBox()
         font_combo.currentFontChanged.connect(lambda font : self.table.set_selection_font(font.family()))
         toolbar.addWidget(font_combo)
