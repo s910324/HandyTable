@@ -5,7 +5,10 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore    import *
 from PyQt5.QtGui     import *
 import inspect
+import numbers
+from uiplus import HBox, VBox, BoxLayout
 class ColorSelector(QWidget):
+    valueChanged = pyqtSignal(int, int, int)
     def __init__(self, parent=None):
         super(ColorSelector, self).__init__(parent)
         x, y = 0, -18
@@ -41,7 +44,6 @@ class ColorSelector(QWidget):
         self.selected_pen   = QPen(QColor("#dd3399"))
         self.selected_brush = QBrush(Qt.NoBrush)
         self.selected_pen.setWidth(3)
-        self.resize(350, 350)
 
     def mousePressEvent(self, event):
         self.clicked_pos =  event.pos()
@@ -69,7 +71,6 @@ class ColorSelector(QWidget):
 
         painter.setBrush(self.circle_brush)
         painter.setPen(self.circle_pen)
-        # painter.drawEllipse(QPointF(cx, cy), 150 * scale, 150 * scale)
 
         l_hex = self.genVHex(cx, cy, 210 * scale)
         painter.drawPolygon(l_hex)
@@ -116,18 +117,24 @@ class ColorSelector(QWidget):
         return hex_poly
 
 class ColorChannelBar(QWidget):
+    valueChanged = pyqtSignal(float)
     def __init__(self, prim_color = "#FFFFFF", value = 1, orentation = Qt.Vertical, parent=None):
         super(ColorChannelBar, self).__init__(parent)
-        self._orentation  = orentation
-        self._prim_color  = None
-        self._clicked_pos = None
-        self._value       = None
-        self._padding     = [10, 10, 10, 10]
-        self.orentation   = orentation
-        self.prim_color   = prim_color
-        self.value        = value
-
-
+        self._orentation      = orentation
+        self._prim_color      = None
+        self._clicked_pos     = None
+        self._value           = None
+        self._padding         = None
+        self._indicator_size  = None
+        self._indicator_brush = None
+        self._border_pen      = None
+        self.orentation       = orentation
+        self.prim_color       = prim_color
+        self.value            = value
+        self.indicator_size   = 7
+        self.padding          = [5, 7, 5, 0] if self.orentation == Qt.Horizontal else [0, 5, 7 ,5]
+        self.indicator_brush  = QBrush(QColor("#000000"))
+        self.border_pen       = QPen(QColor("#c8c8c8"))
 
     @property
     def prim_color(self):
@@ -143,6 +150,10 @@ class ColorChannelBar(QWidget):
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, prim_color))
         self.update()
 
+    def setValue(self, value):
+        print(value)
+        self.value = value
+
     @property
     def value(self):
         return self._value
@@ -151,6 +162,7 @@ class ColorChannelBar(QWidget):
     def value(self, value):
         if 0 <= value <= 1:
             self._value = value
+            self.valueChanged.emit(value)
             self.update()
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, value))
@@ -163,6 +175,10 @@ class ColorChannelBar(QWidget):
     def orentation(self, orentation):
         if orentation in (Qt.Horizontal, Qt.Vertical):
             self._orentation = orentation
+            if orentation == Qt.Horizontal:
+                self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+            else:
+                self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
             self.update()
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, orentation))
@@ -171,14 +187,56 @@ class ColorChannelBar(QWidget):
         return self._padding
 
     @padding.setter
-    def padding(self, l, u, r, d):
-        if all([isinstance(p, numbers.Number) and p >=0 for p in [l, u, r, d] ]):
-            self._padding = [l, u, r, d]
+    def padding(self, p_list):
+        if all([isinstance(p, numbers.Number) and p >=0 for p in p_list ]):
+            self._padding = p_list
             self.update()
         else:
-            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, [l, u, r, d]))
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, p_list))
 
+    @property
+    def indicator_size(self):
+        return self._indicator_size
 
+    @indicator_size.setter
+    def indicator_size(self, size):
+        if isinstance(size, numbers.Number) and size >=0 :
+            self._indicator_size = size
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, size))
+        self.update()
+
+    @property
+    def indicator_brush(self):
+        return self._indicator_brush
+
+    @indicator_brush.setter
+    def indicator_brush(self, brush):
+        if isinstance(brush, QBrush):
+            self._indicator_brush = brush
+        elif isinstance(brush, QColor):
+            self._indicator_brush = QBrush(brush)
+        elif isinstance(brush, str):
+            self._indicator_brush = QBrush(QColor(brush))
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, brush))
+        self.update()
+
+    @property
+    def border_pen(self):
+        return self._border_pen
+
+    @border_pen.setter
+    def border_pen(self, pen):
+        if isinstance(pen, QPen):
+            self._border_pen = pen
+        elif isinstance(pen, QColor):
+            self._border_pen = QPen(pen)
+        elif isinstance(pen, str):
+            self._border_pen = QPen(QColor(pen))
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, brush))
+        self.update()
 
     def paintEvent(self, event):
         pl, pu, pr, pd, = self.padding
@@ -189,18 +247,20 @@ class ColorChannelBar(QWidget):
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
 
-        pen      = QPen(QColor("#c8c8c8"))
-        gradient = QLinearGradient(0, 0, w, 0) if self.orentation == Qt.Horizontal else QLinearGradient(0, 0, 0, h)
-        pen.setWidth(0.5)
-        painter.setPen(pen)
+        gradient = QLinearGradient(0, 0, w, 0) if self.orentation == Qt.Horizontal else QLinearGradient(0, h, 0, 0)
         gradient.setColorAt(0, QColor(  0, 0, 0))
-        gradient.setColorAt(1, self.prim_color)
-        painter.setBrush(gradient) 
-        painter.drawRect(pl, pu, w, h)
+        gradient.setColorAt(1, self.prim_color)        
+        painter.setPen(self.border_pen)
+        painter.setBrush(gradient)
+        if (w > 0 and h > 0):
+            painter.drawRect(pl, pu, w, h)
+
+        if self.indicator_brush:
+            painter.setBrush(self.indicator_brush) 
         if self.orentation == Qt.Horizontal:
-            painter.drawPolygon(self.genHTriangle(pl + (w * self.value), pu, 10))
+            painter.drawPolygon(self.genHTriangle(pl + (w * self.value), pu, self.indicator_size))
         else:    
-            painter.drawPolygon(self.genVTriangle(pl + w, pu + (self.value * h), 10))        
+            painter.drawPolygon(self.genVTriangle(pl + w, pu + ((1-self.value) * h), self.indicator_size))        
         painter.end()        
 
     def genHTriangle(self, x, y, size):
@@ -230,13 +290,184 @@ class ColorChannelBar(QWidget):
         w, h           = (self.width() - pl - pr), (self.height() - pu - pd)
         x              = pl if x < pl else (pr + w) if x > (pl + w) else x 
         y              = pd if y < pd else (pu + h) if y > (pu + h) else y
-        value          = (x - pl)/(w) if self.orentation == Qt.Horizontal else  (y - pu)/(h)
+        value          = (x - pl)/(w) if self.orentation == Qt.Horizontal else  1- ((y - pu)/(h))
         return value
 
+class TriColorChannel(QWidget):
+    valueChanged = pyqtSignal(list)
+    def __init__(self, orentation = Qt.Vertical, parent=None):
+        super(TriColorChannel, self).__init__(parent)
+        self._red_bar    = ColorChannelBar("#FF0000")
+        self._green_bar  = ColorChannelBar("#00FF00")
+        self._blue_bar   = ColorChannelBar("#0000FF") 
+        self._red_spin   = QSpinBox()
+        self._green_spin = QSpinBox()
+        self._blue_spin  = QSpinBox()
+        self._red_box    = VBox(self._red_bar,   self._red_spin)
+        self._green_box  = VBox(self._green_bar, self._green_spin)
+        self._blue_box   = VBox(self._blue_bar,  self._blue_spin)
+        self._tri_box    = HBox(self._red_box, self._green_box, self._blue_box)
+        self._bar_width  = None
+        self._orentation = None
+        self._spin_width = None
+        self._value      = None
+
+        self._red_spin.setRange(0, 255)
+        self._green_spin.setRange(0, 255)
+        self._blue_spin.setRange(0, 255)        
+        self.bind_data()
+
+        self.spin_width  = 40
+        self.bar_width   = 15
+        self.orentation  = orentation
+        self.value       = [255, 255, 255]
+
+        self.setLayout(self._tri_box)
+        
+
+    def bind_data(self):
+        self.valueChanged.connect( lambda val : self._red_spin.setValue(val[0]))
+        self.valueChanged.connect( lambda val : self._green_spin.setValue(val[1]))
+        self.valueChanged.connect( lambda val : self._blue_spin.setValue(val[2]))
+
+        self._red_spin.valueChanged.connect(  lambda val : self.setRed(val))
+        self._green_spin.valueChanged.connect(lambda val : self.setGreen(val))
+        self._blue_spin.valueChanged.connect( lambda val : self.setBlue(val))     
+
+        self._red_spin.valueChanged.connect( lambda val : self._red_bar.setValue(val / 255))
+        self._green_spin.valueChanged.connect( lambda val : self._green_bar.setValue(val / 255))
+        self._blue_spin.valueChanged.connect( lambda val : self._blue_bar.setValue(val / 255))
+
+        self._red_bar.valueChanged.connect(   lambda val : self._red_spin.setValue(int(val * 255)))
+        self._green_bar.valueChanged.connect( lambda val : self._green_spin.setValue(int(val * 255)))
+        self._blue_bar.valueChanged.connect(  lambda val : self._blue_spin.setValue(int(val * 255)))
+
+
+    def setValue(self, value):
+        self.value = value
+
+    def setRed(self, r):
+        self.red = r
+
+    def setGreen(self, g):
+        self.green = g
+    
+    def setBlue(self, b):
+        self.blue = b
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, vals):
+        if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
+            self._value = vals
+            self.valueChanged.emit(vals)
+            print(vals)
+
+    @property
+    def red(self):
+        return self.value[0]
+
+    @red.setter
+    def red(self, r):
+        self.value = [r, self.value[1], self.value[2]]
+
+    @property
+    def green(self):
+        return self.value[1]
+
+    @green.setter
+    def green(self, g):
+        self.value = [self.value[0], g, self.value[2]]
+
+    @property
+    def blue(self):
+        return self.value[2]
+
+    @blue.setter
+    def blue(self, b):
+        self.value = [self.value[0], self.value[1], b]
+
+    @property
+    def orentation(self):
+        return self._orentation
+
+    @orentation.setter
+    def orentation(self, orentation):
+        if orentation in [Qt.Vertical, Qt.Horizontal]:
+            if not ( orentation == self._orentation):
+                if orentation == Qt.Vertical:
+                    self._red_bar.orentation   = Qt.Vertical
+                    self._green_bar.orentation = Qt.Vertical
+                    self._blue_bar.orentation  = Qt.Vertical                      
+                    self._red_box.setDirection(QBoxLayout.TopToBottom)
+                    self._green_box.setDirection(QBoxLayout.TopToBottom)
+                    self._blue_box.setDirection(QBoxLayout.TopToBottom)
+                    self._tri_box.setDirection(QBoxLayout.LeftToRight)
+                elif orentation == Qt.Horizontal:
+                    self._red_bar.orentation   = Qt.Horizontal
+                    self._green_bar.orentation = Qt.Horizontal
+                    self._blue_bar.orentation  = Qt.Horizontal                    
+                    self._red_box.setDirection(QBoxLayout.LeftToRight)
+                    self._green_box.setDirection(QBoxLayout.LeftToRight)
+                    self._blue_box.setDirection(QBoxLayout.LeftToRight)
+                    self._tri_box.setDirection(QBoxLayout.TopToBottom)
+                self._orentation = orentation
+                self.bar_width   = self._bar_width
+                self.update()
+
+    @property
+    def bar_width(self):
+        return self._bar_width
+
+    @bar_width.setter
+    def bar_width(self, width):
+        if (isinstance(width, numbers.Number) and width > 0):
+            bars = [self._red_bar, self._green_bar, self._blue_bar]
+            _    = [bar.resize(bar.sizeHint()) for bar in bars]
+            self._red_bar.adjustSize()
+            if self._orentation == Qt.Vertical:
+                _ = [bar.setFixedWidth(width-3) for bar in bars]
+            elif self._orentation == Qt.Horizontal:
+                _ = [bar.setFixedHeight(width) for bar in bars]             
+
+            self._bar_width = width
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, width))
+
+    @property
+    def spin_width(self):
+        return self._spin_width
+
+    @spin_width.setter
+    def spin_width(self, width):
+        if (isinstance(width, numbers.Number) and width > 0):
+            spins = [self._red_spin, self._green_spin, self._blue_spin]
+            _     = [spin.setFixedWidth(width) for spin in spins]
+            self._spin_width = width
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, width))
+
+class DebugWidget(QWidget):
+    def __init__(self,  parent=None):
+        super(DebugWidget, self).__init__(parent)
+        
+        t1 = TriColorChannel()
+        t2 =  TriColorChannel(Qt.Horizontal)
+        h = HBox(ColorSelector(), t1)
+        v = VBox(h, t2)
+
+        t1.valueChanged.connect(t2.setValue)
+        # t2.valueChanged.connect(t1.setValue)
+        
+        self.setLayout(v)
+        self.resize(500, 500)
 
 def Debugger():
     app  = QApplication(sys.argv)
-    form = ColorChannelBar()
+    form = DebugWidget()
     form.show()
     app.exec_()
     
