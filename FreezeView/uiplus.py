@@ -35,6 +35,7 @@ class BoxLayout(QBoxLayout):
             if issubclass(type(l), BoxLayout):
                     l.clearLayout()
 
+
     def setContentsMargins(self, *args, **argv):
         QBoxLayout.setContentsMargins(self, *args, **argv)
         return self

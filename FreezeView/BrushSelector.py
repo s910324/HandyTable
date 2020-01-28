@@ -8,7 +8,7 @@ import inspect
 import numbers
 from uiplus import HBox, VBox, BoxLayout
 class ColorSelector(QWidget):
-    valueChanged = pyqtSignal(int, int, int)
+    valueChanged = pyqtSignal(list)
     def __init__(self, parent=None):
         super(ColorSelector, self).__init__(parent)
         x, y = 0, -18
@@ -35,6 +35,7 @@ class ColorSelector(QWidget):
             [ -90 + x,   54 + y, '#FFFFFF'], [ -75 + x,   63 + y, '#E9E9E9'], [ -60 + x,   72 + y, '#D4D4D4'], [ -45 + x,   81 + y, '#BFBFBF'], [ -30 + x,   90 + y, '#AAAAAA'], [ -15 + x,   99 + y, '#949494'], [   0 + x,  108 + y, '#7F7F7F'], [  15 + x,   99 + y, '#6A6A6A'], 
             [  30 + x,   90 + y, '#555555'], [  45 + x,   81 + y, '#3F3F3F'], [  60 + x,   72 + y, '#2A2A2A'], [  75 + x,   63 + y, '#151515'], [  90 + x,   54 + y, '#000000']]
 
+        self._value         = None
         self.clicked_pos    = None
         self.selected_hex   = None
         self.selected_color = None
@@ -61,8 +62,18 @@ class ColorSelector(QWidget):
         self.clicked_pos  = None
         self.selected_hex = None
 
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, vals):
+        if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
+            self._value = vals
+            self.valueChanged.emit(vals)
+
     def paintEvent(self, event):
-        scale   = min(self.width()/320, self.height()/320)
+        scale   = min(self.width()/295, self.height()/295)
         cx, cy  = self.width()/2, self.height()/2 
         painter = QPainter()
         painter.begin(self)
@@ -84,6 +95,7 @@ class ColorSelector(QWidget):
             if self.clicked_pos and hex_poly.containsPoint(self.clicked_pos, Qt.OddEvenFill):
                 self.selected_hex   = hex_poly
                 self.selected_color = color
+                self.value          = [QColor(color).red(), QColor(color).green(), QColor(color).blue()]
 
         if self.selected_hex:
             x, y, color = i
@@ -151,7 +163,6 @@ class ColorChannelBar(QWidget):
         self.update()
 
     def setValue(self, value):
-        print(value)
         self.value = value
 
     @property
@@ -303,10 +314,12 @@ class TriColorChannel(QWidget):
         self._red_spin   = QSpinBox()
         self._green_spin = QSpinBox()
         self._blue_spin  = QSpinBox()
+        self._hex_edit   = ColorHexEdit()
         self._red_box    = VBox(self._red_bar,   self._red_spin)
         self._green_box  = VBox(self._green_bar, self._green_spin)
         self._blue_box   = VBox(self._blue_bar,  self._blue_spin)
         self._tri_box    = HBox(self._red_box, self._green_box, self._blue_box)
+        self._main_box   = VBox(self._hex_edit, self._tri_box)
         self._bar_width  = None
         self._orentation = None
         self._spin_width = None
@@ -318,11 +331,11 @@ class TriColorChannel(QWidget):
         self.bind_data()
 
         self.spin_width  = 40
-        self.bar_width   = 15
+        self.bar_width   = 20
         self.orentation  = orentation
         self.value       = [255, 255, 255]
 
-        self.setLayout(self._tri_box)
+        self.setLayout(self._main_box)
         
 
     def bind_data(self):
@@ -364,7 +377,6 @@ class TriColorChannel(QWidget):
         if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
             self._value = vals
             self.valueChanged.emit(vals)
-            print(vals)
 
     @property
     def red(self):
@@ -406,6 +418,13 @@ class TriColorChannel(QWidget):
                     self._green_box.setDirection(QBoxLayout.TopToBottom)
                     self._blue_box.setDirection(QBoxLayout.TopToBottom)
                     self._tri_box.setDirection(QBoxLayout.LeftToRight)
+                    self._main_box.setDirection(QBoxLayout.TopToBottom)
+                    self._red_box.setAlignment(self._red_bar, Qt.AlignHCenter)
+                    self._green_box.setAlignment(self._green_bar, Qt.AlignHCenter)
+                    self._blue_box.setAlignment(self._blue_bar, Qt.AlignHCenter)
+                    self._main_box.setAlignment(self._hex_edit, Qt.AlignHCenter)
+                    self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
+
                 elif orentation == Qt.Horizontal:
                     self._red_bar.orentation   = Qt.Horizontal
                     self._green_bar.orentation = Qt.Horizontal
@@ -414,6 +433,12 @@ class TriColorChannel(QWidget):
                     self._green_box.setDirection(QBoxLayout.LeftToRight)
                     self._blue_box.setDirection(QBoxLayout.LeftToRight)
                     self._tri_box.setDirection(QBoxLayout.TopToBottom)
+                    self._main_box.setDirection(QBoxLayout.LeftToRight)
+                    self._red_box.setAlignment(self._red_bar, Qt.AlignVCenter)
+                    self._green_box.setAlignment(self._green_bar, Qt.AlignVCenter)
+                    self._blue_box.setAlignment(self._blue_bar, Qt.AlignVCenter)           
+                    self._main_box.setAlignment(self._hex_edit, Qt.AlignVCenter)
+                    self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)              
                 self._orentation = orentation
                 self.bar_width   = self._bar_width
                 self.update()
@@ -450,20 +475,75 @@ class TriColorChannel(QWidget):
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, width))
 
+class ColorTextEdit(QLineEdit):
+    def __init__(self,  parent=None):
+        super(ColorTextEdit, self).__init__(parent)
+        self.setFrame(False)
+        self.setAlignment(Qt.AlignCenter)
+        self.setInputMask(">HHHHHH")
+        palette = QPalette()
+        palette.setColor(QPalette.Base, QColor(0,0,0,0))
+        self.setPalette(palette)
+        self.setReadOnly(True)
+
+    def keyPressEvent(self, event):
+        self.setReadOnly(False)
+        QLineEdit.keyPressEvent(self, event)
+        self.setReadOnly(True)
+
+class ColorHexEdit(QWidget):
+    def __init__(self,  parent=None):
+        super(ColorHexEdit, self).__init__(parent)
+        self.h = QHBoxLayout()
+        self.edit = ColorTextEdit()
+        self.h.addWidget(self.edit)
+        self.setLayout(self.h)
+        self.setFixedSize(80, 80)
+
+
+
+    def paintEvent(self, event):
+        scale   = min(self.width()/298, self.height()/298)
+        cx, cy  = self.width()/2, self.height()/2 
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
+
+        painter.setBrush(QColor("#d3cc00"))
+        painter.setPen(QColor("#FF00FF"))
+
+        l_hex = self.genVHex(cx, cy, 210 * scale)
+        painter.drawPolygon(l_hex)
+        painter.end()   
+
+    def genVHex(self, x, y, size):
+        l        = (size/2)*1.39
+        sl, ml   = (0.5 * l), (l * (3**0.5) / 2 )
+        hex_poly = QPolygonF()        
+        hex_poly.append(QPointF(x, y + l))
+        hex_poly.append(QPointF(x - ml, y + sl))
+        hex_poly.append(QPointF(x - ml, y - sl))
+        hex_poly.append(QPointF(x, y - l))
+        hex_poly.append(QPointF(x + ml, y - sl))
+        hex_poly.append(QPointF(x + ml, y + sl))
+        return hex_poly
+
 class DebugWidget(QWidget):
     def __init__(self,  parent=None):
         super(DebugWidget, self).__init__(parent)
-        
-        t1 = TriColorChannel()
-        t2 =  TriColorChannel(Qt.Horizontal)
-        h = HBox(ColorSelector(), t1)
-        v = VBox(h, t2)
+        c  = ColorSelector()
+        # t1 = TriColorChannel()
+        t2 = TriColorChannel(Qt.Horizontal)
+        # c.valueChanged.connect(t1.setValue)
+        c.valueChanged.connect(t2.setValue)
+        # h = HBox(c, t1)
+        v = VBox(c, t2)
 
-        t1.valueChanged.connect(t2.setValue)
-        # t2.valueChanged.connect(t1.setValue)
+        
         
         self.setLayout(v)
-        self.resize(500, 500)
+        self.resize(400, 500)
 
 def Debugger():
     app  = QApplication(sys.argv)
