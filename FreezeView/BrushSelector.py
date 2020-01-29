@@ -351,6 +351,7 @@ class TriColorChannel(QWidget):
         self.valueChanged.connect( lambda val : self._red_spin.setValue(val[0]))
         self.valueChanged.connect( lambda val : self._green_spin.setValue(val[1]))
         self.valueChanged.connect( lambda val : self._blue_spin.setValue(val[2]))
+        self.valueChanged.connect( lambda val : self._hex_edit.setValue(val))
 
         self._red_spin.valueChanged.connect(  lambda val : self.setRed(val))
         self._green_spin.valueChanged.connect(lambda val : self.setGreen(val))
@@ -487,59 +488,74 @@ class TriColorChannel(QWidget):
 class ColorTextEdit(QLineEdit):
     def __init__(self,  parent=None):
         super(ColorTextEdit, self).__init__(parent)
+        self._color_light = QColor("#EEEEEE")
+        self._color_dark  = QColor("#333333")
+        self._Transparent = QColor(0,0,0,0)
+
         self.setFrame(False)
         self.setAlignment(Qt.AlignCenter)
-        self.setInputMask(">HHHHHH")
-        palette = QPalette()
-        palette.setColor(QPalette.Base, QColor(0,0,0,0))
-        self.setPalette(palette)
+        self.setInputMask(r"\#>HHHHHH")
         self.setTextMargins(0,0,0,0)
-        self.setText("FFFFFF")
-        self.setFixedWidth(40)
+        self.setFixedWidth(55)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.setFont(QFont("consolas", weight = 75))
+        self.setText("#FFFFFF")
+        self.textChanged.connect(self.update_palette)
+
+    def setText(self, txt):
+        QLineEdit.setText(self, txt)
+        self.update_palette()
+
+    def update_palette(self):
+        palette = QPalette()
+        color   = QColor(self.text())
+        palette.setColor(QPalette.Text, self._color_light if (color.lightness() < 180) and (max([color.red(), color.green(), color.blue()]) < 250) else self._color_dark)
+        palette.setColor(QPalette.Base, self._Transparent)
+        self.setPalette(palette)
+        self.update()
 
 class ColorHexEdit(QWidget):
+    valueChanged = pyqtSignal(list)
+    textChanged  = pyqtSignal(str)
     def __init__(self,  parent=None):
         super(ColorHexEdit, self).__init__(parent)
-        self._text   = None
-        self._value  = None
-        self.h       = QHBoxLayout()
-        self.postfix = QLabel("#")
-        self.edit    = ColorTextEdit()
-        self.h.addStretch()
-        self.h.addWidget(self.postfix)
-        self.h.addWidget(self.edit)
-        self.h.addStretch()
-        self.h.setSpacing(0)
-
-        self.setLayout(self.h)
+        self._edit       = ColorTextEdit()
+        self._border_pen = QPen(QColor("#DD3399"))
+        self._border_pen.setWidth(3)
+        self.setLayout(HBox(self._edit))
         self.setFixedSize(80, 80)
+        self._edit.textChanged.connect(self.update)
+
+    def setValue(self, val):
+        self.value = val
+
+    def setText(self, txt):
+        self.text = txt
 
     @property
     def value(self):
-        return self._value
+        return [QColor(self.text).red(), QColor(self.text).green(), QColor(self.text).blue()]
 
     @value.setter
-    def value(self, val):
+    def value(self, vals):
+        print(*vals)
         if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
-            self._value = val
-            self._text   = "{0:X}{0:X}{0:X}".format(*val)
-            self.valueChanged.emit(vals)
-            self.textChanged.emit(txt)
+            self._edit.setText("#{0:02X}{1:02x}{2:02X}".format(*vals))
+            self.valueChanged.emit(self.value)
+            self.textChanged.emit(self.text)
+            self.update()
 
     @property
     def text(self):
-        return self._text
+        return self._edit.text()
 
     @text.setter
     def text(self, txt):
-        if re.match(r"^[0-9A-F]{6}$", txt):
-            self._text = txt
-            self._value = [int(txt[0:2], 16), int(txt[2:4], 16), int(txt[4:6], 16)]
-            self.valueChanged.emit(vals)
+        if re.match(r"^#[0-9A-F]{6}$", txt):
+            self._edit.setText(self._text)
+            self.valueChanged.emit(self.value)
             self.textChanged.emit(txt)
-
-
+            self.update()
 
     def paintEvent(self, event):
         scale   = min(self.width()/298, self.height()/298)
@@ -548,12 +564,8 @@ class ColorHexEdit(QWidget):
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
-
-        painter.setBrush(QColor("#d3cc00"))
-        pen = QPen(QColor("#DD3399"))
-        pen.setWidth(3)
-        painter.setPen(pen)
-
+        painter.setBrush(QColor(self.text if self.text else Qt.NoBrush))
+        painter.setPen(self._border_pen)
         l_hex = self.genVHex(cx, cy, 210 * scale)
         painter.drawPolygon(l_hex)
         painter.end()   
@@ -576,20 +588,26 @@ class DebugWidget(QWidget):
         c  = ColorSelector()
         t1 = TriColorChannel()
         t2 = TriColorChannel(Qt.Horizontal)
+        ch = ColorHexEdit()
+        p1 = QPushButton("Add to Palette")
+        p2 = QPushButton("OK")
+        p3 = QPushButton("Cancle")
         # c.valueChanged.connect(t1.setValue)
         c.valueChanged.connect(t2.setValue)
-        # h = HBox(c, t1)
-        v = VBox(c, t2)
-
-        
-        
-        self.setLayout(v)
+        c.valueChanged.connect(t2.setValue)
+        c.valueChanged.connect(ch.setValue)
+        v1 = VBox(c, t2)
+        h1 = HBox(p1, -1, p2, p3)
+        v2 = VBox(v1, h1)
+        self.setLayout(v2)
         self.resize(400, 500)
 
-def Debugger():
-    app  = QApplication(sys.argv)
-    form = DebugWidget()
-    form.show()
-    app.exec_()
-    
-Debugger()
+
+if __name__ == "__main__":
+    def Debugger():
+        app  = QApplication(sys.argv)
+        form = DebugWidget()
+        form.show()
+        app.exec_()
+        
+    Debugger()
