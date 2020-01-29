@@ -6,6 +6,7 @@ from PyQt5.QtCore    import *
 from PyQt5.QtGui     import *
 import inspect
 import numbers
+import re
 from uiplus import HBox, VBox, BoxLayout
 class ColorSelector(QWidget):
     valueChanged = pyqtSignal(list)
@@ -40,9 +41,9 @@ class ColorSelector(QWidget):
         self.selected_hex   = None
         self.selected_color = None
         self.circle_brush   = QBrush(QColor("#FFFFFF"), Qt.Dense2Pattern)
-        self.circle_pen     = QPen(QColor("#c8c8c8"))
+        self.circle_pen     = QPen(QColor("#C8C8C8"))
         self.hex_pen        = QPen(Qt.NoPen)        
-        self.selected_pen   = QPen(QColor("#dd3399"))
+        self.selected_pen   = QPen(QColor("#DD3399"))
         self.selected_brush = QBrush(Qt.NoBrush)
         self.selected_pen.setWidth(3)
 
@@ -185,14 +186,22 @@ class ColorChannelBar(QWidget):
     @orentation.setter
     def orentation(self, orentation):
         if orentation in (Qt.Horizontal, Qt.Vertical):
-            self._orentation = orentation
-            if orentation == Qt.Horizontal:
+            
+            if orentation == Qt.Horizontal and not(self._orentation == orentation):
+                self._orentation = orentation
                 self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
-            else:
+                if self.padding:
+                    pl, pu, pr, pd, = self.padding
+                    self.padding    = [pu, pr, pu, pl]
+            if orentation == Qt.Vertical and not(self._orentation == orentation):
                 self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
+                if self.padding:                
+                    pl, pu, pr, pd, = self.padding
+                    self.padding    = [pu, pr, pd, pl]
             self.update()
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, orentation))
+
     @property
     def padding(self):
         return self._padding
@@ -299,7 +308,7 @@ class ColorChannelBar(QWidget):
     def getCurserVal(self, x, y):
         pl, pu, pr, pd = self.padding
         w, h           = (self.width() - pl - pr), (self.height() - pu - pd)
-        x              = pl if x < pl else (pr + w) if x > (pl + w) else x 
+        x              = pl if x < pl else (pl + w) if x > (pl + w) else x 
         y              = pd if y < pd else (pu + h) if y > (pu + h) else y
         value          = (x - pl)/(w) if self.orentation == Qt.Horizontal else  1- ((y - pu)/(h))
         return value
@@ -331,7 +340,7 @@ class TriColorChannel(QWidget):
         self.bind_data()
 
         self.spin_width  = 40
-        self.bar_width   = 20
+        self.bar_width   = 18
         self.orentation  = orentation
         self.value       = [255, 255, 255]
 
@@ -347,8 +356,8 @@ class TriColorChannel(QWidget):
         self._green_spin.valueChanged.connect(lambda val : self.setGreen(val))
         self._blue_spin.valueChanged.connect( lambda val : self.setBlue(val))     
 
-        self._red_spin.valueChanged.connect( lambda val : self._red_bar.setValue(val / 255))
-        self._green_spin.valueChanged.connect( lambda val : self._green_bar.setValue(val / 255))
+        self._red_spin.valueChanged.connect(  lambda val : self._red_bar.setValue(val / 255))
+        self._green_spin.valueChanged.connect(lambda val : self._green_bar.setValue(val / 255))
         self._blue_spin.valueChanged.connect( lambda val : self._blue_bar.setValue(val / 255))
 
         self._red_bar.valueChanged.connect(   lambda val : self._red_spin.setValue(int(val * 255)))
@@ -454,7 +463,7 @@ class TriColorChannel(QWidget):
             _    = [bar.resize(bar.sizeHint()) for bar in bars]
             self._red_bar.adjustSize()
             if self._orentation == Qt.Vertical:
-                _ = [bar.setFixedWidth(width-3) for bar in bars]
+                _ = [bar.setFixedWidth(width) for bar in bars]
             elif self._orentation == Qt.Horizontal:
                 _ = [bar.setFixedHeight(width) for bar in bars]             
 
@@ -484,21 +493,51 @@ class ColorTextEdit(QLineEdit):
         palette = QPalette()
         palette.setColor(QPalette.Base, QColor(0,0,0,0))
         self.setPalette(palette)
-        self.setReadOnly(True)
-
-    def keyPressEvent(self, event):
-        self.setReadOnly(False)
-        QLineEdit.keyPressEvent(self, event)
-        self.setReadOnly(True)
+        self.setTextMargins(0,0,0,0)
+        self.setText("FFFFFF")
+        self.setFixedWidth(40)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
 class ColorHexEdit(QWidget):
     def __init__(self,  parent=None):
         super(ColorHexEdit, self).__init__(parent)
-        self.h = QHBoxLayout()
-        self.edit = ColorTextEdit()
+        self._text   = None
+        self._value  = None
+        self.h       = QHBoxLayout()
+        self.postfix = QLabel("#")
+        self.edit    = ColorTextEdit()
+        self.h.addStretch()
+        self.h.addWidget(self.postfix)
         self.h.addWidget(self.edit)
+        self.h.addStretch()
+        self.h.setSpacing(0)
+
         self.setLayout(self.h)
         self.setFixedSize(80, 80)
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
+            self._value = val
+            self._text   = "{0:X}{0:X}{0:X}".format(*val)
+            self.valueChanged.emit(vals)
+            self.textChanged.emit(txt)
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, txt):
+        if re.match(r"^[0-9A-F]{6}$", txt):
+            self._text = txt
+            self._value = [int(txt[0:2], 16), int(txt[2:4], 16), int(txt[4:6], 16)]
+            self.valueChanged.emit(vals)
+            self.textChanged.emit(txt)
 
 
 
@@ -511,7 +550,9 @@ class ColorHexEdit(QWidget):
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
 
         painter.setBrush(QColor("#d3cc00"))
-        painter.setPen(QColor("#FF00FF"))
+        pen = QPen(QColor("#DD3399"))
+        pen.setWidth(3)
+        painter.setPen(pen)
 
         l_hex = self.genVHex(cx, cy, 210 * scale)
         painter.drawPolygon(l_hex)
@@ -533,7 +574,7 @@ class DebugWidget(QWidget):
     def __init__(self,  parent=None):
         super(DebugWidget, self).__init__(parent)
         c  = ColorSelector()
-        # t1 = TriColorChannel()
+        t1 = TriColorChannel()
         t2 = TriColorChannel(Qt.Horizontal)
         # c.valueChanged.connect(t1.setValue)
         c.valueChanged.connect(t2.setValue)
