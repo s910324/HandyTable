@@ -70,8 +70,9 @@ class ColorSelector(QWidget):
     @value.setter
     def value(self, vals):
         if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
-            self._value = vals
-            self.valueChanged.emit(vals)
+            if not(vals == self._value):
+                self._value = vals
+                self.valueChanged.emit(vals)
 
     def paintEvent(self, event):
         scale   = min(self.width()/295, self.height()/295)
@@ -173,9 +174,10 @@ class ColorChannelBar(QWidget):
     @value.setter
     def value(self, value):
         if 0 <= value <= 1:
-            self._value = value
-            self.valueChanged.emit(value)
-            self.update()
+            if not (value == self._value):
+                self._value = value
+                self.valueChanged.emit(value)
+                self.update()
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, value))
 
@@ -385,8 +387,9 @@ class TriColorChannel(QWidget):
     @value.setter
     def value(self, vals):
         if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
-            self._value = vals
-            self.valueChanged.emit(vals)
+            if not(vals == self._value):
+                self._value = vals
+                self.valueChanged.emit(vals)
 
     @property
     def red(self):
@@ -491,7 +494,7 @@ class ColorTextEdit(QLineEdit):
         self._color_light = QColor("#EEEEEE")
         self._color_dark  = QColor("#333333")
         self._Transparent = QColor(0,0,0,0)
-
+ 
         self.setFrame(False)
         self.setAlignment(Qt.AlignCenter)
         self.setInputMask(r"\#>HHHHHH")
@@ -499,12 +502,11 @@ class ColorTextEdit(QLineEdit):
         self.setFixedWidth(55)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.setFont(QFont("consolas", weight = 75))
-        self.setText("#FFFFFF")
-        self.textChanged.connect(self.update_palette)
+        self.textChanged.connect(lambda : self.update_palette())
 
     def setText(self, txt):
-        QLineEdit.setText(self, txt)
-        self.update_palette()
+        QLineEdit.setText(self, txt)   
+        # self.update_palette()
 
     def update_palette(self):
         palette = QPalette()
@@ -519,43 +521,67 @@ class ColorHexEdit(QWidget):
     textChanged  = pyqtSignal(str)
     def __init__(self,  parent=None):
         super(ColorHexEdit, self).__init__(parent)
+        self._text       = None
+        self._value      = None
         self._edit       = ColorTextEdit()
         self._border_pen = QPen(QColor("#DD3399"))
         self._border_pen.setWidth(3)
         self.setLayout(HBox(self._edit))
         self.setFixedSize(80, 80)
-        self._edit.textChanged.connect(self.update)
+        self._edit.textChanged.connect(self.setText)
+        self._edit.setText("#FFFFFF")
+        
+    @pyqtSlot()
+    def _emit_change(self):
+        try:
+            print("\nsignal from edit")
+            self.valueChanged.emit(self._value)
+            self.textChanged.emit(self._text)
+            print("signal ends edit\n")
+            self.update()
+        except:
+            pass
 
-    def setValue(self, val):
-        self.value = val
-
+    @pyqtSlot(str)        
     def setText(self, txt):
+        print("x")
         self.text = txt
+
+    @pyqtSlot(list)
+    def setValue(self, vals):
+        self.value = vals
 
     @property
     def value(self):
-        return [QColor(self.text).red(), QColor(self.text).green(), QColor(self.text).blue()]
+        return self._value
 
     @value.setter
     def value(self, vals):
-        print(*vals)
         if len(vals)==3 and all([ 0 <= val <= 255 for val in vals ]):
-            self._edit.setText("#{0:02X}{1:02x}{2:02X}".format(*vals))
-            self.valueChanged.emit(self.value)
-            self.textChanged.emit(self.text)
+            if not(vals == self._value):
+                self._value = vals
+                self._text  = "#{0:02X}{1:02x}{2:02X}".format(*vals)
+                self._edit.setText(self._text)
+                self.valueChanged.emit(self._value)
+                self.textChanged.emit(self._text)
             self.update()
 
     @property
     def text(self):
-        return self._edit.text()
+        return self._text
 
     @text.setter
     def text(self, txt):
-        if re.match(r"^#[0-9A-F]{6}$", txt):
-            self._edit.setText(self._text)
-            self.valueChanged.emit(self.value)
-            self.textChanged.emit(txt)
+        if re.match(r"^#[0-9A-F]{0,6}$", txt):
+            if not (txt == self._text):
+                self._value = [QColor(self.text).red(), QColor(self.text).green(), QColor(self.text).blue()]
+                self._text  = txt
+                self._edit.setText(self._text)
+                self.valueChanged.emit(self._value)
+                self.textChanged.emit(self._text)
             self.update()
+
+
 
     def paintEvent(self, event):
         scale   = min(self.width()/298, self.height()/298)
@@ -582,31 +608,55 @@ class ColorHexEdit(QWidget):
         hex_poly.append(QPointF(x + ml, y + sl))
         return hex_poly
 
-class DebugWidget(QWidget):
+class ColorDialog(QWidget):
+    valueChanged = pyqtSignal(list)
     def __init__(self,  parent=None):
-        super(DebugWidget, self).__init__(parent)
-        c  = ColorSelector()
-        t1 = TriColorChannel()
-        t2 = TriColorChannel(Qt.Horizontal)
-        ch = ColorHexEdit()
-        p1 = QPushButton("Add to Palette")
-        p2 = QPushButton("OK")
-        p3 = QPushButton("Cancle")
-        # c.valueChanged.connect(t1.setValue)
-        c.valueChanged.connect(t2.setValue)
-        c.valueChanged.connect(t2.setValue)
-        c.valueChanged.connect(ch.setValue)
-        v1 = VBox(c, t2)
-        h1 = HBox(p1, -1, p2, p3)
-        v2 = VBox(v1, h1)
+        super(ColorDialog, self).__init__(parent)
+        self._value            = None
+        self.color_selector    = ColorSelector()
+        self.tri_color_channel = TriColorChannel(orentation = Qt.Horizontal)
+        self.color_hex_edit    = ColorHexEdit()
+        self.confirm_pg        = QPushButton("OK")
+        self.cancel_pb         = QPushButton("Cancle")
+
+        v1                     = VBox(self.color_selector, self.tri_color_channel)
+        h1                     = HBox( -1, self.confirm_pg, self.cancel_pb)
+        v2                     = VBox(v1, h1)
+
+        self.color_selector.valueChanged.connect(self.setValue)
+        self.tri_color_channel.valueChanged.connect(self.setValue)
+        self.color_hex_edit.valueChanged.connect(self.setValue)
+        self.color_hex_edit.valueChanged.connect(lambda v : print("signal out", v))
+        self.color_hex_edit.textChanged.connect( lambda t : print("text   out", t))
+        self.valueChanged.connect(self.tri_color_channel.setValue)
+        self.valueChanged.connect(self.color_hex_edit.setValue)
+
         self.setLayout(v2)
         self.resize(400, 500)
+
+    def setValue(self, vals):
+        self.value = vals
+
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, vals):
+        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
+            if not(vals == self._value):
+                self._value = vals
+                self.valueChanged.emit(vals)
+                self.update()
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
 
 if __name__ == "__main__":
     def Debugger():
         app  = QApplication(sys.argv)
-        form = DebugWidget()
+        form = ColorDialog()
         form.show()
         app.exec_()
         
