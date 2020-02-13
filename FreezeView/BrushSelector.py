@@ -611,17 +611,18 @@ class ColorDialog(QWidget):
         self._value            = None
         self.color_selector    = ColorSelector()
         self.tri_color_channel = TriColorChannel(orentation = Qt.Horizontal)
-        self.confirm_pg        = QPushButton("OK")
+        self.confirm_pb        = QPushButton("OK")
         self.cancel_pb         = QPushButton("Cancle")
 
         v1                     = VBox(self.color_selector, self.tri_color_channel)
-        h1                     = HBox( -1, self.confirm_pg, self.cancel_pb)
+        h1                     = HBox( -1, self.confirm_pb, self.cancel_pb)
         v2                     = VBox(v1, h1)
 
         self.color_selector.valueChanged.connect(self.setValue)
         self.tri_color_channel.valueChanged.connect(self.setValue)
-        
         self.valueChanged.connect(self.tri_color_channel.setValue)
+        self.confirm_pb.clicked.connect(self.close)
+        self.cancel_pb.clicked.connect(self.close)
 
         self.setLayout(v2)
         self.resize(400, 500)
@@ -629,7 +630,6 @@ class ColorDialog(QWidget):
     @pyqtSlot(list)
     def setValue(self, vals):
         self.value = vals
-
 
     @property
     def value(self):
@@ -645,11 +645,47 @@ class ColorDialog(QWidget):
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
+    def closeEvent(self, e):
+        e.accept()
+        return self._value
+
+
+
+
+
+class BrushSelector(QWidget):
+    def __init__(self,  parent=None):
+        super(BrushSelector, self).__init__(parent)
+        x, y, dx, dy = 10, 10, 60, 30
+
+        self.pattern_list =[
+            [ x + ( dx * 0 ), y + ( dy * 0 ),   Qt.SolidPattern], [x + ( dx * 1 ), y + ( dy * 0 ),    Qt.Dense1Pattern], [x + ( dx * 2 ), y + ( dy * 0 ), Qt.Dense2Pattern], [x + ( dx * 3 ), y + ( dy * 0 ), Qt.Dense3Pattern],
+            [ x + ( dx * 0 ), y + ( dy * 1 ),  Qt.Dense4Pattern], [x + ( dx * 1 ), y + ( dy * 1 ),    Qt.Dense5Pattern], [x + ( dx * 2 ), y + ( dy * 1 ), Qt.Dense6Pattern], [x + ( dx * 3 ), y + ( dy * 1 ), Qt.Dense7Pattern],
+            [ x + ( dx * 0 ), y + ( dy * 2 ),     Qt.HorPattern], [x + ( dx * 1 ), y + ( dy * 2 ),       Qt.VerPattern], [x + ( dx * 2 ), y + ( dy * 2 ),  Qt.CrossPattern], [x + ( dx * 3 ), y + ( dy * 2 ),  Qt.BDiagPattern],
+            [ x + ( dx * 0 ), y + ( dy * 3 ),   Qt.FDiagPattern], [x + ( dx * 1 ), y + ( dy * 3 ), Qt.DiagCrossPattern]]
+
+    def paintEvent(self, event):
+
+        for p in self.pattern_list:
+            painter = QPainter()
+            painter.begin(self)
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
+
+            painter.setBrush(QBrush(QColor("#555555"), p[2]))
+            qp = QPen(QColor("#333333"))
+            qp.setWidthF(0.5)
+            qp.setJoinStyle(Qt.MiterJoin)
+            painter.setPen(qp)
+            painter.drawRect(p[0], p[1], 50, 20)
+
+        painter.end()        
+
 
 if __name__ == "__main__":
     def Debugger():
         app  = QApplication(sys.argv)
-        form = ColorDialog()
+        form = BrushSelector()
         form.show()
         app.exec_()
         
