@@ -12,8 +12,9 @@ class ColorSelector(QWidget):
     valueChanged = pyqtSignal(list)
     def __init__(self, parent=None):
         super(ColorSelector, self).__init__(parent)
-        x, y = 0, -18
-        self.color_hex_list = [
+        x, y  = 0, -18
+
+        self._color_hex_list = [
             [ -90 + x,  -54 + y, '#008104'], [ -90 + x,  -36 + y, '#0F8100'], [ -90 + x,  -18 + y, '#278100'], [ -90 + x,    0 + y, '#408100'], [ -90 + x,   18 + y, '#5A8100'], [ -90 + x,   36 + y, '#718100'], [ -90 + x,   54 + y, '#817C00'], [ -75 + x,  -63 + y, '#008118'], 
             [ -75 + x,  -45 + y, '#00C507'], [ -75 + x,  -27 + y, '#1EC500'], [ -75 + x,   -9 + y, '#4BC500'], [ -75 + x,    9 + y, '#7AC500'], [ -75 + x,   27 + y, '#A7C500'], [ -75 + x,   45 + y, '#C5BE00'], [ -75 + x,   63 + y, '#816800'], [ -60 + x,  -72 + y, '#00812E'], 
             [ -60 + x,  -54 + y, '#00C52C'], [ -60 + x,  -36 + y, '#0AFF14'], [ -60 + x,  -18 + y, '#3DFF0A'], [ -60 + x,    0 + y, '#84FF0A'], [ -60 + x,   18 + y, '#CCFF0A'], [ -60 + x,   36 + y, '#FFF50A'], [ -60 + x,   54 + y, '#C59900'], [ -60 + x,   72 + y, '#815200'], 
@@ -32,36 +33,36 @@ class ColorSelector(QWidget):
             [  90 + x,  -54 + y, '#000481'], [  90 + x,  -36 + y, '#0F0081'], [  90 + x,  -18 + y, '#270081'], [  90 + x,    0 + y, '#400081'], [  90 + x,   18 + y, '#5A0081'], [  90 + x,   36 + y, '#710081'], [  90 + x,   54 + y, '#81007C']]
 
         x, y = 0, 18
-        self.grayscale_hex_list = [
+        self._grayscale_hex_list = [
             [ -90 + x,   54 + y, '#FFFFFF'], [ -75 + x,   63 + y, '#E9E9E9'], [ -60 + x,   72 + y, '#D4D4D4'], [ -45 + x,   81 + y, '#BFBFBF'], [ -30 + x,   90 + y, '#AAAAAA'], [ -15 + x,   99 + y, '#949494'], [   0 + x,  108 + y, '#7F7F7F'], [  15 + x,   99 + y, '#6A6A6A'], 
             [  30 + x,   90 + y, '#555555'], [  45 + x,   81 + y, '#3F3F3F'], [  60 + x,   72 + y, '#2A2A2A'], [  75 + x,   63 + y, '#151515'], [  90 + x,   54 + y, '#000000']]
 
-        self._value         = None
-        self.clicked_pos    = None
-        self.selected_hex   = None
-        self.selected_color = None
-        self.circle_brush   = QBrush(QColor("#FFFFFF"), Qt.Dense2Pattern)
-        self.circle_pen     = QPen(QColor("#C8C8C8"))
-        self.hex_pen        = QPen(Qt.NoPen)        
-        self.selected_pen   = QPen(QColor("#DD3399"))
-        self.selected_brush = QBrush(Qt.NoBrush)
-        self.selected_pen.setWidth(3)
+        self._value          = None
+        self._clicked_pos    = None
+        self._selected_hex   = None
+        self._selected_color = None
+        self._circle_brush   = QBrush(QColor("#FFFFFF"), Qt.Dense2Pattern)
+        self._circle_pen     = QPen(QColor("#C8C8C8"))
+        self._hex_pen        = QPen(Qt.NoPen)        
+        self._selected_pen   = QPen(QColor("#DD3399"))
+        self._selected_brush = QBrush(Qt.NoBrush)
+        self._selected_pen.setWidth(3)
 
     def mousePressEvent(self, event):
-        self.clicked_pos =  event.pos()
+        self._clicked_pos =  event.pos()
         self.update()
 
     def mouseMoveEvent(self, event):
-        if self.clicked_pos:
-            self.clicked_pos = event.pos()
+        if self._clicked_pos:
+            self._clicked_pos = event.pos()
             self.update()
 
     def mouseReleaseEvent(self,  event):
-        self.clicked_pos = None
+        self._clicked_pos = None
 
     def resizeEvent(self, event):
-        self.clicked_pos  = None
-        self.selected_hex = None
+        self._clicked_pos  = None
+        self._selected_hex = None
 
     @property
     def value(self):
@@ -79,31 +80,31 @@ class ColorSelector(QWidget):
         cx, cy  = self.width()/2, self.height()/2 
         painter = QPainter()
         painter.begin(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
 
-        painter.setBrush(self.circle_brush)
-        painter.setPen(self.circle_pen)
+        painter.setBrush(self._circle_brush)
+        painter.setPen(self._circle_pen)
 
         l_hex = self.genVHex(cx, cy, 210 * scale)
         painter.drawPolygon(l_hex)
 
-        painter.setPen(self.hex_pen)
-        for i in (self.color_hex_list + self.grayscale_hex_list):
+        painter.setPen(self._hex_pen)
+        for i in (self._color_hex_list + self._grayscale_hex_list):
             x, y, color = i
             hex_poly    = self.genHHex(cx + (x * scale), cy + (y * scale), 15 * scale)
             painter.setBrush(QColor(color))
             painter.drawPolygon(hex_poly)  
-            if self.clicked_pos and hex_poly.containsPoint(self.clicked_pos, Qt.OddEvenFill):
-                self.selected_hex   = hex_poly
-                self.selected_color = color
+            if self._clicked_pos and hex_poly.containsPoint(self._clicked_pos, Qt.OddEvenFill):
+                self._selected_hex   = hex_poly
+                self._selected_color = color
                 self.value          = [QColor(color).red(), QColor(color).green(), QColor(color).blue()]
 
-        if self.selected_hex:
+        if self._selected_hex:
             x, y, color = i
-            painter.setPen(self.selected_pen)
-            painter.setBrush(self.selected_brush)
-            painter.drawPolygon(self.selected_hex)
+            painter.setPen(self._selected_pen)
+            painter.setBrush(self._selected_brush)
+            painter.drawPolygon(self._selected_hex)
         painter.end()        
 
     def genHHex(self, x, y, size):
@@ -584,7 +585,7 @@ class ColorHexEdit(QWidget):
         cx, cy  = self.width()/2, self.height()/2 
         painter = QPainter()
         painter.begin(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
         painter.setBrush(QColor(self.text if self.text else Qt.NoBrush))
         painter.setPen(self._border_pen)
@@ -650,42 +651,107 @@ class ColorDialog(QWidget):
         return self._value
 
 
+class BrushSelectDialog(QWidget):
+    def __init__(self,  parent=None):
+        super(BrushSelectDialog, self).__init__(parent)    
+        self.setLayout(VBox(BrushSelectDrop()))
+
+
+class BrushSelectDrop(QPushButton):
+    valueChanged = pyqtSignal(Qt.BrushStyle)
+    def __init__(self,  parent=None):
+        super(BrushSelectDrop, self).__init__(parent)
+        self.b = BrushSelector()    
+
+    def mousePressEvent(self, event):
+        x, y, h = self.pos().x(), self.pos().y(), self.size().height()
+        self.b.pop(self.mapToGlobal(QPoint(x, y)))#QCursor().pos())
+        print(self.mapToGlobal(QPoint(x, y)), self.size().height())
 
 
 
-class BrushSelector(QWidget):
+
+class BrushSelector(QWidget):    
+    valueChanged = pyqtSignal(Qt.BrushStyle)
     def __init__(self,  parent=None):
         super(BrushSelector, self).__init__(parent)
-        x, y, dx, dy = 10, 10, 60, 30
 
-        self.pattern_list =[
-            [ x + ( dx * 0 ), y + ( dy * 0 ),   Qt.SolidPattern], [x + ( dx * 1 ), y + ( dy * 0 ),    Qt.Dense1Pattern], [x + ( dx * 2 ), y + ( dy * 0 ), Qt.Dense2Pattern], [x + ( dx * 3 ), y + ( dy * 0 ), Qt.Dense3Pattern],
-            [ x + ( dx * 0 ), y + ( dy * 1 ),  Qt.Dense4Pattern], [x + ( dx * 1 ), y + ( dy * 1 ),    Qt.Dense5Pattern], [x + ( dx * 2 ), y + ( dy * 1 ), Qt.Dense6Pattern], [x + ( dx * 3 ), y + ( dy * 1 ), Qt.Dense7Pattern],
-            [ x + ( dx * 0 ), y + ( dy * 2 ),     Qt.HorPattern], [x + ( dx * 1 ), y + ( dy * 2 ),       Qt.VerPattern], [x + ( dx * 2 ), y + ( dy * 2 ),  Qt.CrossPattern], [x + ( dx * 3 ), y + ( dy * 2 ),  Qt.BDiagPattern],
-            [ x + ( dx * 0 ), y + ( dy * 3 ),   Qt.FDiagPattern], [x + ( dx * 1 ), y + ( dy * 3 ), Qt.DiagCrossPattern]]
+        x, y, w, h, dx, dy = 10 , 10, 25, 25, 25, 25
+        self._clicked_pos  = None
+        self._pattern_list = [ 
+            [x + ( dx * 0 ), y + ( dy * 0 ), w, h,   Qt.SolidPattern], [x + ( dx * 1 ), y + ( dy * 0 ), w, h,    Qt.Dense1Pattern], [x + ( dx * 2 ), y + ( dy * 0 ), w, h, Qt.Dense2Pattern], [x + ( dx * 3 ), y + ( dy * 0 ), w, h, Qt.Dense3Pattern], [x + ( dx * 4 ), y + ( dy * 0 ), w, h,     Qt.FDiagPattern], 
+            [x + ( dx * 0 ), y + ( dy * 1 ), w, h,  Qt.Dense4Pattern], [x + ( dx * 1 ), y + ( dy * 1 ), w, h,    Qt.Dense5Pattern], [x + ( dx * 2 ), y + ( dy * 1 ), w, h, Qt.Dense6Pattern], [x + ( dx * 3 ), y + ( dy * 1 ), w, h, Qt.Dense7Pattern], [x + ( dx * 4 ), y + ( dy * 1 ), w, h, Qt.DiagCrossPattern],
+            [x + ( dx * 0 ), y + ( dy * 2 ), w, h,     Qt.HorPattern], [x + ( dx * 1 ), y + ( dy * 2 ), w, h,       Qt.VerPattern], [x + ( dx * 2 ), y + ( dy * 2 ), w, h,  Qt.CrossPattern], [x + ( dx * 3 ), y + ( dy * 2 ), w, h,  Qt.BDiagPattern]
+           ]
+
+        self._clicked_pos    = None
+        self._hover_pos      = None
+        self._selected_rect  = None
+        self._selected_brush = None
+        self._selected_style = None
+        self._rect_brush     = QBrush(QColor("#333333"))
+        self._rect_pen       = QPen(QColor("#333333"))     
+        self._selected_pen   = QPen(QColor("#DD3399"))
+        self._hovered_pen    = QPen(QColor("#DD3399"))
+        self._rect_pen.setWidth(1)
+        self._selected_pen.setWidth(2)
+        self.setMouseTracking(True)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.SubWindow )        
+        
 
     def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
 
-        for p in self.pattern_list:
-            painter = QPainter()
-            painter.begin(self)
-            painter.setRenderHint(QPainter.Antialiasing, True)
-            painter.setRenderHint(QPainter.SmoothPixmapTransform, True) 
-
-            painter.setBrush(QBrush(QColor("#555555"), p[2]))
-            qp = QPen(QColor("#333333"))
-            qp.setWidthF(0.5)
-            qp.setJoinStyle(Qt.MiterJoin)
-            painter.setPen(qp)
-            painter.drawRect(p[0], p[1], 50, 20)
-
+        for rect_set in self._pattern_list:
+            x, y, w, h, style         = rect_set
+            self._selected_style, pen = (style, self._selected_pen) if (self._clicked_pos and self._clicked_pos in QRect(x, y, w, h)) else ((style, self._hovered_pen)  if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (self._selected_style, self._rect_pen))
+            self._rect_brush.setStyle(style)
+            painter.setPen(pen)
+            painter.setBrush(self._rect_brush)
+            painter.drawRect(x, y, w-3, h-3)
         painter.end()        
 
+    def mousePressEvent(self, event):
+        self._clicked_pos =  event.pos()
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        self._hover_pos = event.pos()
+        self.update()
+
+    def mouseReleaseEvent(self,  event):
+        self._selected_rect = None
+
+    @property
+    def value(self):
+        return self._selected_style
+
+
+    def pop(self, point):
+        x, y           = point.x(), point.y()
+        self.animation = QPropertyAnimation(self, b"geometry")
+        self.animation.setDuration(50)
+        self.animation.setStartValue(self.geometry() if self.isVisible() else QRect(x, y, 0, 0))
+        self.animation.setEndValue(QRect(x, y, 140, 90))
+
+        QWidget.show(self)
+        self.animation.start()
+
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.WindowDeactivate:
+            self.hide()
+            self.close()
+
+        return False
 
 if __name__ == "__main__":
     def Debugger():
         app  = QApplication(sys.argv)
-        form = BrushSelector()
+        form = BrushSelectDialog()
         form.show()
         app.exec_()
         
