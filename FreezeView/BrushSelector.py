@@ -716,8 +716,10 @@ class BrushSelector(QWidget):
             painter.setBrush(self._rect_brush)
             painter.drawRect(x, y, w-3, h-3)
 
-            if self._selected_style : self.valueSelected.emit(self._selected_style)
-            if self._clicked_pos    : self.close()
+            if self._selected_style:
+                self.valueSelected.emit(self._selected_style)
+                self._selected_style = None
+            if self._clicked_pos:self.close()
         
         painter.end()
 
