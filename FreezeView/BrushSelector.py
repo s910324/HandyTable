@@ -98,7 +98,7 @@ class ColorSelector(QWidget):
             if self._clicked_pos and hex_poly.containsPoint(self._clicked_pos, Qt.OddEvenFill):
                 self._selected_hex   = hex_poly
                 self._selected_color = color
-                self.value          = [QColor(color).red(), QColor(color).green(), QColor(color).blue()]
+                self.value           = [QColor(color).red(), QColor(color).green(), QColor(color).blue()]
 
         if self._selected_hex:
             x, y, color = i
@@ -650,28 +650,203 @@ class ColorDialog(QWidget):
         e.accept()
         return self._value
 
-
 class BrushSelectDialog(QWidget):
     def __init__(self,  parent=None):
         super(BrushSelectDialog, self).__init__(parent)    
-        self.setLayout(VBox(BrushSelectDrop(), BrushSelectDrop(), BrushSelectDrop()))
+        self.setLayout(VBox(QPushButton(), BrushSelectDrop(), BrushSelectDrop(), BrushSelectDrop()))
 
+class SelectDrop(QPushButton):
+    valueChanged = pyqtSignal(Qt.BrushStyle)
+    def __init__(self,  parent=None):
+        super(BrushSelectDrop, self).__init__(parent)
+        self._hovered              = False
+        self._button_brush         = QBrush(QColor("#E1E1E1"))
+        self._button_pen           = QPen(QColor("#ADADAD"))
+        self._button_hovered_brush = QBrush(QColor("#E5F1FB"))
+        self._button_hovered_pen   = QPen(QColor("#0078D7"))
+
+
+    def mousePressEvent(self, event):
+        corner = self.mapToGlobal(self.rect().bottomLeft())
+        self._brush_selector = BrushSelector()
+        self._brush_selector.valueSelected.connect( lambda x : self.setStyle(x))
+        self._brush_selector.pop(corner)
+        self._brush_selector.activateWindow()
+
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
+
+        w, h = self.size().width(), self.size().height()
+        button_brush, buttom_pen = (self._button_hovered_brush, self._button_hovered_pen) if self._hovered else (self._button_brush, self._button_pen)
+        painter.setBrush( button_brush)
+        painter.setPen(buttom_pen)
+        painter.drawRect(0, 0, w-1, h-1)
+           
+        painter.setBrush(self._rect_base_brush)
+        painter.setPen(self._rect_pen)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
+
+        self._rect_texture_brush.setStyle(self._style)   
+        painter.setBrush(self._rect_texture_brush)
+        painter.setPen(self._rect_pen)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
+
+        painter.end()
+
+    def enterEvent(self, event):
+        self._hovered = True
+        self.update()     
+
+    def leaveEvent(self, event):
+        self._hovered = False
+        self.update()  
+
+    def setStyle(self, vals):
+        self.style = vals
+
+    @property
+    def style(self):
+        return self._style
+
+    @style.setter
+    def style(self, vals):
+        if issubclass(type(vals), Qt.BrushStyle):
+            self._style = vals
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
+
+    @property
+    def texture_color(self):
+        return [QColor(self._texture_color).red(), QColor(self._texture_color).green(), QColor(self._texture_color).blue()]
+
+    @texture_color.setter
+    def texture_color(self, vals):
+        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
+            if not(vals == self._texture_color):
+                self._texture_color      = vals
+                self._rect_texture_brush = QBrush(QColor(*vals))
+                self._rect_pen           = QPen(QColor(*vals))
+                self.update()
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
+
+    @property
+    def base_color(self):
+        return [QColor(self._base_color).red(), QColor(self._base_color).green(), QColor(self._base_color).blue()]
+
+    @base_color.setter
+    def base_color(self, vals):
+        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
+            if not(vals == self._base_color):
+                self._base_color      = vals
+                self._rect_base_brush = QBrush(QColor(*vals))
+                self.update()
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
 class BrushSelectDrop(QPushButton):
     valueChanged = pyqtSignal(Qt.BrushStyle)
     def __init__(self,  parent=None):
         super(BrushSelectDrop, self).__init__(parent)
-        self._brush_selector = None    
+        self._brush_selector       = None    
+        self._style                = Qt.SolidPattern
+        self._texture_color        = "#333333"
+        self._base_color           = "#FFFFFF"
+        self._hovered              = False
+        self._button_brush         = QBrush(QColor("#E1E1E1"))
+        self._button_pen           = QPen(QColor("#ADADAD"))
+        self._button_hovered_brush = QBrush(QColor("#E5F1FB"))
+        self._button_hovered_pen   = QPen(QColor("#0078D7"))
+        self._rect_texture_brush   = QBrush(QColor(self._texture_color))
+        self._rect_base_brush      = QBrush(QColor(self._base_color))
+        self._rect_pen             = QPen(QColor(self._texture_color))        
+        self._rect_margin          = 3
 
     def mousePressEvent(self, event):
-        g = self.mapToGlobal(self.rect().topLeft())
-        x, y= g.x(), g.y()
+        corner = self.mapToGlobal(self.rect().bottomLeft())
         self._brush_selector = BrushSelector()
-        self._brush_selector.valueSelected.connect( lambda x : print(x))
-        self._brush_selector.pop(g)
+        self._brush_selector.valueSelected.connect( lambda x : self.setStyle(x))
+        self._brush_selector.pop(corner)
         self._brush_selector.activateWindow()
 
 
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
+
+        w, h = self.size().width(), self.size().height()
+        button_brush, buttom_pen = (self._button_hovered_brush, self._button_hovered_pen) if self._hovered else (self._button_brush, self._button_pen)
+        painter.setBrush( button_brush)
+        painter.setPen(buttom_pen)
+        painter.drawRect(0, 0, w-1, h-1)
+           
+        painter.setBrush(self._rect_base_brush)
+        painter.setPen(self._rect_pen)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
+
+        self._rect_texture_brush.setStyle(self._style)   
+        painter.setBrush(self._rect_texture_brush)
+        painter.setPen(self._rect_pen)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
+
+        painter.end()
+
+    def enterEvent(self, event):
+        self._hovered = True
+        self.update()     
+
+    def leaveEvent(self, event):
+        self._hovered = False
+        self.update()  
+
+    def setStyle(self, vals):
+        self.style = vals
+
+    @property
+    def style(self):
+        return self._style
+
+    @style.setter
+    def style(self, vals):
+        if issubclass(type(vals), Qt.BrushStyle):
+            self._style = vals
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
+
+    @property
+    def texture_color(self):
+        return [QColor(self._texture_color).red(), QColor(self._texture_color).green(), QColor(self._texture_color).blue()]
+
+    @texture_color.setter
+    def texture_color(self, vals):
+        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
+            if not(vals == self._texture_color):
+                self._texture_color      = vals
+                self._rect_texture_brush = QBrush(QColor(*vals))
+                self._rect_pen           = QPen(QColor(*vals))
+                self.update()
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
+
+    @property
+    def base_color(self):
+        return [QColor(self._base_color).red(), QColor(self._base_color).green(), QColor(self._base_color).blue()]
+
+    @base_color.setter
+    def base_color(self, vals):
+        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
+            if not(vals == self._base_color):
+                self._base_color      = vals
+                self._rect_base_brush = QBrush(QColor(*vals))
+                self.update()
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
 class BrushSelector(QWidget):    
     valueSelected = pyqtSignal(object)
@@ -724,9 +899,6 @@ class BrushSelector(QWidget):
         painter.end()
 
 
- 
-
-
     def mousePressEvent(self, event):
         self._clicked_pos =  event.pos()
         self.update()       
@@ -752,13 +924,6 @@ class BrushSelector(QWidget):
         QWidget.show(self)
         self.animation.start()
 
-
-    def eventFilter(self, object, event):
-        # if event.type() == QEvent.WindowDeactivate:
-        #     self.hide()
-        #     self.close()
-
-        return False
 
 if __name__ == "__main__":
     def Debugger():
