@@ -655,99 +655,6 @@ class BrushSelectDialog(QWidget):
         super(BrushSelectDialog, self).__init__(parent)    
         self.setLayout(VBox(QPushButton(), BrushSelectDrop(), BrushSelectDrop(), BrushSelectDrop()))
 
-class SelectDrop(QPushButton):
-    valueChanged = pyqtSignal(Qt.BrushStyle)
-    def __init__(self,  parent=None):
-        super(BrushSelectDrop, self).__init__(parent)
-        self._hovered              = False
-        self._button_brush         = QBrush(QColor("#E1E1E1"))
-        self._button_pen           = QPen(QColor("#ADADAD"))
-        self._button_hovered_brush = QBrush(QColor("#E5F1FB"))
-        self._button_hovered_pen   = QPen(QColor("#0078D7"))
-
-
-    def mousePressEvent(self, event):
-        corner = self.mapToGlobal(self.rect().bottomLeft())
-        self._brush_selector = BrushSelector()
-        self._brush_selector.valueSelected.connect( lambda x : self.setStyle(x))
-        self._brush_selector.pop(corner)
-        self._brush_selector.activateWindow()
-
-
-    def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
-
-        w, h = self.size().width(), self.size().height()
-        button_brush, buttom_pen = (self._button_hovered_brush, self._button_hovered_pen) if self._hovered else (self._button_brush, self._button_pen)
-        painter.setBrush( button_brush)
-        painter.setPen(buttom_pen)
-        painter.drawRect(0, 0, w-1, h-1)
-           
-        painter.setBrush(self._rect_base_brush)
-        painter.setPen(self._rect_pen)
-        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
-
-        self._rect_texture_brush.setStyle(self._style)   
-        painter.setBrush(self._rect_texture_brush)
-        painter.setPen(self._rect_pen)
-        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
-
-        painter.end()
-
-    def enterEvent(self, event):
-        self._hovered = True
-        self.update()     
-
-    def leaveEvent(self, event):
-        self._hovered = False
-        self.update()  
-
-    def setStyle(self, vals):
-        self.style = vals
-
-    @property
-    def style(self):
-        return self._style
-
-    @style.setter
-    def style(self, vals):
-        if issubclass(type(vals), Qt.BrushStyle):
-            self._style = vals
-        else:
-            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
-
-    @property
-    def texture_color(self):
-        return [QColor(self._texture_color).red(), QColor(self._texture_color).green(), QColor(self._texture_color).blue()]
-
-    @texture_color.setter
-    def texture_color(self, vals):
-        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
-            if not(vals == self._texture_color):
-                self._texture_color      = vals
-                self._rect_texture_brush = QBrush(QColor(*vals))
-                self._rect_pen           = QPen(QColor(*vals))
-                self.update()
-        else:
-            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
-
-    @property
-    def base_color(self):
-        return [QColor(self._base_color).red(), QColor(self._base_color).green(), QColor(self._base_color).blue()]
-
-    @base_color.setter
-    def base_color(self, vals):
-        if len(vals) == 3 and all([ 0<= val <=255 for val in vals]):
-            if not(vals == self._base_color):
-                self._base_color      = vals
-                self._rect_base_brush = QBrush(QColor(*vals))
-                self.update()
-        else:
-            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
-
 class BrushSelectDrop(QPushButton):
     valueChanged = pyqtSignal(Qt.BrushStyle)
     def __init__(self,  parent=None):
@@ -763,11 +670,17 @@ class BrushSelectDrop(QPushButton):
         self._button_hovered_pen   = QPen(QColor("#0078D7"))
         self._rect_texture_brush   = QBrush(QColor(self._texture_color))
         self._rect_base_brush      = QBrush(QColor(self._base_color))
-        self._rect_pen             = QPen(QColor(self._texture_color))        
+        self._rect_pen             = QPen(QColor(self._texture_color)) 
+        self._triangle_brush       = QBrush(QColor("#ADADAD"))
+        self._triangle_pen         = QPen(QColor("#ADADAD"))
         self._rect_margin          = 3
+        self._triangle_spacing     = 12
 
     def mousePressEvent(self, event):
-        corner = self.mapToGlobal(self.rect().bottomLeft())
+        if self._brush_selector:
+            self._brush_selector.close()        
+
+        corner               = self.mapToGlobal(self.rect().bottomLeft())
         self._brush_selector = BrushSelector()
         self._brush_selector.valueSelected.connect( lambda x : self.setStyle(x))
         self._brush_selector.pop(corner)
@@ -781,21 +694,33 @@ class BrushSelectDrop(QPushButton):
         painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
 
         w, h = self.size().width(), self.size().height()
-        button_brush, buttom_pen = (self._button_hovered_brush, self._button_hovered_pen) if self._hovered else (self._button_brush, self._button_pen)
+        button_brush,   button_pen   = (self._button_hovered_brush, self._button_hovered_pen) if self._hovered else (self._button_brush, self._button_pen)
+        triangle_brush, triangle_pen = (QBrush(QColor("#0078D7")),  Qt.NoPen)                 if self._hovered else (QBrush(QColor("#ADADAD")), Qt.NoPen)
         painter.setBrush( button_brush)
-        painter.setPen(buttom_pen)
+        painter.setPen(button_pen)
         painter.drawRect(0, 0, w-1, h-1)
+        painter.setPen(triangle_pen)
+        painter.setBrush(triangle_brush)
+        painter.drawPolygon(self.genHTriangle(w-(2*self._rect_margin), h/2+3, 6))
            
         painter.setBrush(self._rect_base_brush)
         painter.setPen(self._rect_pen)
-        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1-self._triangle_spacing, h-(2* self._rect_margin)-1)
 
         self._rect_texture_brush.setStyle(self._style)   
         painter.setBrush(self._rect_texture_brush)
         painter.setPen(self._rect_pen)
-        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1, h-(2* self._rect_margin)-1)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1-self._triangle_spacing, h-(2* self._rect_margin)-1)
 
         painter.end()
+
+    def genHTriangle(self, x, y, size):
+        sl, ml   = (0.5 * size), (size * (3**0.5) / 2 )
+        hex_poly = QPolygonF()        
+        hex_poly.append(QPointF(x, y))
+        hex_poly.append(QPointF(x - sl, y - ml))
+        hex_poly.append(QPointF(x + sl, y - ml))
+        return hex_poly    
 
     def enterEvent(self, event):
         self._hovered = True
@@ -898,6 +823,11 @@ class BrushSelector(QWidget):
         
         painter.end()
 
+    def changeEvent(self, event):
+        if event.type() == QEvent.ActivationChange and (not self.isActiveWindow()):
+            self.close()
+       
+    
 
     def mousePressEvent(self, event):
         self._clicked_pos =  event.pos()
