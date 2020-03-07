@@ -653,39 +653,23 @@ class ColorDialog(QWidget):
 class BrushSelectDialog(QWidget):
     def __init__(self,  parent=None):
         super(BrushSelectDialog, self).__init__(parent)    
-        self.setLayout(VBox(QPushButton(), BrushSelectDrop(), BrushSelectDrop(), BrushSelectDrop()))
+        self.setLayout(VBox(QPushButton(), SelectDrop(), BrushSelectDrop(), BrushSelectDrop()))
 
-class BrushSelectDrop(QPushButton):
-    valueChanged = pyqtSignal(Qt.BrushStyle)
+
+class SelectDrop(QPushButton):
     def __init__(self,  parent=None):
-        super(BrushSelectDrop, self).__init__(parent)
-        self._brush_selector       = None    
-        self._style                = Qt.SolidPattern
-        self._texture_color        = "#333333"
-        self._base_color           = "#FFFFFF"
+        super(SelectDrop, self).__init__(parent)
+        self._pop_selector         = None   
+        self._click_blocked        = False 
         self._hovered              = False
         self._button_brush         = QBrush(QColor("#E1E1E1"))
         self._button_pen           = QPen(QColor("#ADADAD"))
         self._button_hovered_brush = QBrush(QColor("#E5F1FB"))
         self._button_hovered_pen   = QPen(QColor("#0078D7"))
-        self._rect_texture_brush   = QBrush(QColor(self._texture_color))
-        self._rect_base_brush      = QBrush(QColor(self._base_color))
-        self._rect_pen             = QPen(QColor(self._texture_color)) 
         self._triangle_brush       = QBrush(QColor("#ADADAD"))
         self._triangle_pen         = QPen(QColor("#ADADAD"))
-        self._rect_margin          = 3
         self._triangle_spacing     = 12
-
-    def mousePressEvent(self, event):
-        if self._brush_selector:
-            self._brush_selector.close()        
-
-        corner               = self.mapToGlobal(self.rect().bottomLeft())
-        self._brush_selector = BrushSelector()
-        self._brush_selector.valueSelected.connect( lambda x : self.setStyle(x))
-        self._brush_selector.pop(corner)
-        self._brush_selector.activateWindow()
-
+        self._rect_margin          = 3
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -701,20 +685,32 @@ class BrushSelectDrop(QPushButton):
         painter.drawRect(0, 0, w-1, h-1)
         painter.setPen(triangle_pen)
         painter.setBrush(triangle_brush)
-        painter.drawPolygon(self.genHTriangle(w-(2*self._rect_margin), h/2+3, 6))
-           
-        painter.setBrush(self._rect_base_brush)
-        painter.setPen(self._rect_pen)
-        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1-self._triangle_spacing, h-(2* self._rect_margin)-1)
-
-        self._rect_texture_brush.setStyle(self._style)   
-        painter.setBrush(self._rect_texture_brush)
-        painter.setPen(self._rect_pen)
-        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1-self._triangle_spacing, h-(2* self._rect_margin)-1)
+        painter.drawPolygon(self._genHTriangle(w-(2*self._rect_margin), h/2+3, 6))
+        self._draw_decorator(painter)
 
         painter.end()
 
-    def genHTriangle(self, x, y, size):
+    def mousePressEvent(self, event):
+        if not(self._click_blocked):
+            self._pop_selector_tab()
+        self._click_blocked = False
+
+    def _draw_decorator(self, painter):
+        pass
+
+    def _pop_selector_tab(self):
+        if self._pop_selector:
+            corner             = self.mapToGlobal(self.rect().bottomLeft())
+            self._pop_selector.hide_request.connect( self._hide_selector_tab)
+            self._pop_selector.pop(corner)
+            self._pop_selector.activateWindow()
+
+    def _hide_selector_tab(self):
+        if self._pop_selector:
+            self._pop_selector.hide()
+            if self._hovered : self._click_blocked = True
+
+    def _genHTriangle(self, x, y, size):
         sl, ml   = (0.5 * size), (size * (3**0.5) / 2 )
         hex_poly = QPolygonF()        
         hex_poly.append(QPointF(x, y))
@@ -729,6 +725,26 @@ class BrushSelectDrop(QPushButton):
     def leaveEvent(self, event):
         self._hovered = False
         self.update()  
+
+class BrushSelectDrop(SelectDrop):
+    valueChanged = pyqtSignal(Qt.BrushStyle)
+    def __init__(self,  parent=None):
+        super(BrushSelectDrop, self).__init__(parent)
+        self._style                = Qt.SolidPattern
+        self._texture_color        = "#333333"
+        self._base_color           = "#FFFFFF"
+        self._rect_texture_brush   = QBrush(QColor(self._texture_color))
+        self._rect_base_brush      = QBrush(QColor(self._base_color))
+        self._rect_pen             = QPen(QColor(self._texture_color)) 
+        self._pop_selector         = BrushPopSelector()
+        self._pop_selector.valueSelected.connect( lambda x : self.setStyle(x))
+
+    def _draw_decorator(self, painter):
+        w, h = self.size().width(), self.size().height()
+        self._rect_texture_brush.setStyle(self._style)   
+        painter.setBrush(self._rect_texture_brush)
+        painter.setPen(self._rect_pen)
+        painter.drawRect( self._rect_margin,  self._rect_margin, w-(2*self._rect_margin)-1-self._triangle_spacing, h-(2* self._rect_margin)-1)
 
     def setStyle(self, vals):
         self.style = vals
@@ -773,10 +789,11 @@ class BrushSelectDrop(QPushButton):
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
-class BrushSelector(QWidget):    
+class BrushPopSelector(QWidget):    
     valueSelected = pyqtSignal(object)
+    hide_request  = pyqtSignal()
     def __init__(self,  parent=None):
-        super(BrushSelector, self).__init__(parent)
+        super(BrushPopSelector, self).__init__(parent)
 
         x, y, w, h, dx, dy = 10 , 10, 25, 25, 25, 25
         self._pattern_list = [ 
@@ -793,13 +810,10 @@ class BrushSelector(QWidget):
         self._hovered_pen    = QPen(QColor("#dd33FF"))
         self._rect_pen.setWidth(1)
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.SubWindow )
+        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.SubWindow | Qt.WindowStaysOnTopHint)
         self.setMouseTracking(True)
         self.installEventFilter(self)     
-
         self.setStyleSheet("""QWidget{border: 1px solid rgba(182, 188, 188, 182);}""")
-
-        
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -815,19 +829,19 @@ class BrushSelector(QWidget):
             painter.setPen(pen)
             painter.setBrush(self._rect_brush)
             painter.drawRect(x, y, w-3, h-3)
-
-            if self._selected_style:
-                self.valueSelected.emit(self._selected_style)
-                self._selected_style = None
-            if self._clicked_pos:self.close()
-        
         painter.end()
+        
+    def update(self):
+        if self._selected_style:
+            self.valueSelected.emit(self._selected_style)
+            self.hide_request.emit()   
+            self._selected_style = None     
+            self._clicked_pos    = None            
+        QWidget.update(self)
 
     def changeEvent(self, event):
         if event.type() == QEvent.ActivationChange and (not self.isActiveWindow()):
-            self.close()
-       
-    
+            self.hide_request.emit()
 
     def mousePressEvent(self, event):
         self._clicked_pos =  event.pos()
@@ -838,21 +852,22 @@ class BrushSelector(QWidget):
         self.update()     
 
     def mouseReleaseEvent(self,  event):
-        self._selected_rect = None
+        self.update()     
 
     @property
     def value(self):
         return self._selected_style
 
-
     def pop(self, point):
         x, y           = point.x(), point.y()
         self.animation = QPropertyAnimation(self, b"geometry")
-        self.animation.setDuration(50)
-        self.animation.setStartValue(self.geometry() if self.isVisible() else QRect(x, y, 0, 0))
-        self.animation.setEndValue(QRect(x, y, 140, 90))
-        QWidget.show(self)
+        self.animation.setDuration(150)
+        self.animation.setStartValue(QRect(x, y,   0,  0))
+        self.animation.setEndValue(QRect(  x, y, 140, 90))
         self.animation.start()
+        QWidget.show(self)
+
+
 
 
 if __name__ == "__main__":
