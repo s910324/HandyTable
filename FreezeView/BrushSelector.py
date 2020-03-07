@@ -653,8 +653,7 @@ class ColorDialog(QWidget):
 class BrushSelectDialog(QWidget):
     def __init__(self,  parent=None):
         super(BrushSelectDialog, self).__init__(parent)    
-        self.setLayout(VBox(QPushButton(), SelectDrop(), BrushSelectDrop(), BrushSelectDrop()))
-
+        self.setLayout(VBox(QPushButton(), SelectDrop(), BrushSelectDrop(), LineSelectDrop()))
 
 class SelectDrop(QPushButton):
     def __init__(self,  parent=None):
@@ -687,7 +686,6 @@ class SelectDrop(QPushButton):
         painter.setBrush(triangle_brush)
         painter.drawPolygon(self._genHTriangle(w-(2*self._rect_margin), h/2+3, 6))
         self._draw_decorator(painter)
-
         painter.end()
 
     def mousePressEvent(self, event):
@@ -789,53 +787,47 @@ class BrushSelectDrop(SelectDrop):
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
-class BrushPopSelector(QWidget):    
+class LineSelectDrop(SelectDrop):
+    valueChanged = pyqtSignal(Qt.BrushStyle)
+    def __init__(self,  parent=None):
+        super(LineSelectDrop, self).__init__(parent)
+        self._style                = Qt.SolidLine
+        self._pop_selector         = LinePopSelector()
+
+class PopSelector(QWidget):
     valueSelected = pyqtSignal(object)
     hide_request  = pyqtSignal()
     def __init__(self,  parent=None):
-        super(BrushPopSelector, self).__init__(parent)
+        super(PopSelector, self).__init__(parent)
+        self._width              = 150
+        self._height             = 150
+        self._animation_duration = 150
+        self._selected_value     = None
+        self._clicked_pos        = None
+        self._hover_pos          = None
 
-        x, y, w, h, dx, dy = 10 , 10, 25, 25, 25, 25
-        self._pattern_list = [ 
-            [x + ( dx * 0 ), y + ( dy * 0 ), w, h,   Qt.SolidPattern], [x + ( dx * 1 ), y + ( dy * 0 ), w, h,    Qt.Dense1Pattern], [x + ( dx * 2 ), y + ( dy * 0 ), w, h, Qt.Dense2Pattern], [x + ( dx * 3 ), y + ( dy * 0 ), w, h, Qt.Dense3Pattern], [x + ( dx * 4 ), y + ( dy * 0 ), w, h,     Qt.FDiagPattern], 
-            [x + ( dx * 0 ), y + ( dy * 1 ), w, h,  Qt.Dense4Pattern], [x + ( dx * 1 ), y + ( dy * 1 ), w, h,    Qt.Dense5Pattern], [x + ( dx * 2 ), y + ( dy * 1 ), w, h, Qt.Dense6Pattern], [x + ( dx * 3 ), y + ( dy * 1 ), w, h, Qt.Dense7Pattern], [x + ( dx * 4 ), y + ( dy * 1 ), w, h, Qt.DiagCrossPattern],
-            [x + ( dx * 0 ), y + ( dy * 2 ), w, h,     Qt.HorPattern], [x + ( dx * 1 ), y + ( dy * 2 ), w, h,       Qt.VerPattern], [x + ( dx * 2 ), y + ( dy * 2 ), w, h,  Qt.CrossPattern], [x + ( dx * 3 ), y + ( dy * 2 ), w, h,  Qt.BDiagPattern]
-           ]
-
-        self._clicked_pos    = None
-        self._hover_pos      = None
-        self._selected_style = None
-        self._rect_brush     = QBrush(QColor("#333333"))
-        self._rect_pen       = QPen(QColor("#333333"))     
-        self._hovered_pen    = QPen(QColor("#dd33FF"))
-        self._rect_pen.setWidth(1)
-        self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.SubWindow | Qt.WindowStaysOnTopHint)
         self.setMouseTracking(True)
-        self.installEventFilter(self)     
+        self.installEventFilter(self)
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet("""QWidget{border: 1px solid rgba(182, 188, 188, 182);}""")
+        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | Qt.SubWindow | Qt.WindowStaysOnTopHint)
 
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
-
-        for rect_set in self._pattern_list:
-            x, y, w, h, style    = rect_set
-            self._selected_style = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_style
-            pen, style           = (self._hovered_pen, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (self._rect_pen, style)
-            self._rect_brush.setStyle(style)
-            painter.setPen(pen)
-            painter.setBrush(self._rect_brush)
-            painter.drawRect(x, y, w-3, h-3)
+        self._draw_decorator(painter)
         painter.end()
+
+    def _draw_decorator(self, painter):
+        pass        
         
     def update(self):
-        if self._selected_style:
-            self.valueSelected.emit(self._selected_style)
+        if self._selected_value:
+            self.valueSelected.emit(self._selected_value)
             self.hide_request.emit()   
-            self._selected_style = None     
+            self._selected_value = None     
             self._clicked_pos    = None            
         QWidget.update(self)
 
@@ -854,21 +846,101 @@ class BrushPopSelector(QWidget):
     def mouseReleaseEvent(self,  event):
         self.update()     
 
-    @property
-    def value(self):
-        return self._selected_style
-
     def pop(self, point):
         x, y           = point.x(), point.y()
         self.animation = QPropertyAnimation(self, b"geometry")
-        self.animation.setDuration(150)
-        self.animation.setStartValue(QRect(x, y,   0,  0))
-        self.animation.setEndValue(QRect(  x, y, 140, 90))
-        self.animation.start()
+        self.animation.setDuration(self._animation_duration)
+        self.animation.setStartValue(QRect(x, y, 0, 0))
+        self.animation.setEndValue(QRect(x, y, self._width, self._height))
         QWidget.show(self)
+        self.animation.start()
+        
+class BrushPopSelector(PopSelector):    
+    valueSelected = pyqtSignal(object)
+    def __init__(self,  parent=None):
+        super(BrushPopSelector, self).__init__(parent)
+        self._width        = 220
+        self._height       = 140
+        x, y, w, h, dx, dy = 10, 10, 60, 20, 70, 25
+
+        self._pattern_list = [ 
+            [x + ( dx * 0 ), y + ( dy * 0 ), w, h,     Qt.SolidPattern], 
+            [x + ( dx * 1 ), y + ( dy * 0 ), w, h,    Qt.Dense1Pattern], 
+            [x + ( dx * 2 ), y + ( dy * 0 ), w, h,    Qt.Dense2Pattern], 
+            [x + ( dx * 0 ), y + ( dy * 1 ), w, h,    Qt.Dense3Pattern], 
+            [x + ( dx * 1 ), y + ( dy * 1 ), w, h,     Qt.FDiagPattern], 
+            [x + ( dx * 2 ), y + ( dy * 1 ), w, h,    Qt.Dense4Pattern], 
+            [x + ( dx * 0 ), y + ( dy * 2 ), w, h,    Qt.Dense5Pattern], 
+            [x + ( dx * 1 ), y + ( dy * 2 ), w, h,    Qt.Dense6Pattern], 
+            [x + ( dx * 2 ), y + ( dy * 2 ), w, h,    Qt.Dense7Pattern], 
+            [x + ( dx * 0 ), y + ( dy * 3 ), w, h, Qt.DiagCrossPattern],
+            [x + ( dx * 1 ), y + ( dy * 3 ), w, h,       Qt.HorPattern], 
+            [x + ( dx * 2 ), y + ( dy * 3 ), w, h,       Qt.VerPattern], 
+            [x + ( dx * 0 ), y + ( dy * 4 ), w, h,     Qt.CrossPattern], 
+            [x + ( dx * 1 ), y + ( dy * 4 ), w, h,     Qt.BDiagPattern]
+        ]
+
+        self._rect_brush    = QBrush(QColor("#333333"))
+        self._rect_pen      = QPen(QColor("#333333"))     
+        self._hovered_pen   = QPen(QColor("#0078D7"))
+        self._hovered_brush = QBrush(QColor("#E5F1FB"))
+        self._rect_pen.setWidth(1)
+
+    def  _draw_decorator(self, painter):
+        for rect_set in self._pattern_list:
+            x, y, w, h, style    = rect_set
+            self._selected_value = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
+            pen, brush, style    = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
+            painter.setPen(pen)
+            painter.setBrush(brush)
+            painter.drawRect(x-3, y-3, w+4, h+4)
+
+            self._rect_brush.setStyle(style)
+            painter.setPen(self._rect_pen)
+            painter.setBrush(self._rect_brush)
+            painter.drawRect(x, y, w-3, h-3)
+
+    @property
+    def value(self):
+        return self._selected_value
+
+class LinePopSelector(PopSelector):    
+    valueSelected = pyqtSignal(object)
+    def __init__(self,  parent=None):
+        super(LinePopSelector, self).__init__(parent)
+        self._width       = 140
+        self._height      = 140
+        self._line_margin = 5
+        x, y, w, h, dy = 10, 10, 120, 25, 25
+
+        self._pattern_list = [ 
+            [x, y + ( dy * 0 ), w, h,      Qt.SolidLine],
+            [x, y + ( dy * 1 ), w, h,       Qt.DashLine],
+            [x, y + ( dy * 2 ), w, h,        Qt.DotLine],
+            [x, y + ( dy * 3 ), w, h,    Qt.DashDotLine],
+            [x, y + ( dy * 4 ), w, h, Qt.DashDotDotLine]
+        ]
+
+        self._hovered_brush = QBrush(QColor("#E5F1FB"))
+        self._hovered_pen   = QPen(QColor("#0078D7"))        
+        self._line_pen      = QPen(QColor("#3333333"))
+
+    def  _draw_decorator(self, painter):
+        for line_set in self._pattern_list:
+            x, y, w, h, style    = line_set
+            self._selected_value = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
+            pen, brush, style    = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
+            painter.setPen(pen)
+            painter.setBrush(brush)
+            painter.drawRect(x, y, w-3, h-3)
+            self._line_pen.setStyle(style)
+            painter.setPen(self._line_pen)
+            painter.drawLine(QPoint((x + self._line_margin), (y + h/2)), QPoint((x + w - (2 * self._line_margin)), (y + h/2)))
 
 
-
+    @property
+    def value(self):
+        return self._selected_value
 
 if __name__ == "__main__":
     def Debugger():
