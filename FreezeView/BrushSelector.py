@@ -793,6 +793,29 @@ class LineSelectDrop(SelectDrop):
         super(LineSelectDrop, self).__init__(parent)
         self._style                = Qt.SolidLine
         self._pop_selector         = LinePopSelector()
+        self._pop_selector.valueSelected.connect( lambda x : self.setStyle(x))
+        self._line_pen(QColor())
+
+    def _draw_decorator(self, painter):
+        w, h = self.size().width(), self.size().height()
+        self._rect_texture_brush.setStyle(self._style)   
+        painter.setBrush(self._rect_texture_brush)
+        painter.setPen(self._rect_pen)
+        painter.drawLine(QPoint(5, h/2), QPoint(w-10, h/2))
+
+    def setStyle(self, vals):
+        self.style = vals
+
+    @property
+    def style(self):
+        return self._style
+
+    @style.setter
+    def style(self, vals):
+        if issubclass(type(vals), Qt.BrushStyle):
+            self._style = vals
+        else:
+            raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
 class PopSelector(QWidget):
     valueSelected = pyqtSignal(object)
