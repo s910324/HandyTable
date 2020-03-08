@@ -791,17 +791,16 @@ class LineSelectDrop(SelectDrop):
     valueChanged = pyqtSignal(Qt.BrushStyle)
     def __init__(self,  parent=None):
         super(LineSelectDrop, self).__init__(parent)
-        self._style                = Qt.SolidLine
-        self._pop_selector         = LinePopSelector()
+        self._style        = Qt.SolidLine
+        self._pop_selector = LinePopSelector()
+        self._line_pen     = QPen(QColor(333333))
         self._pop_selector.valueSelected.connect( lambda x : self.setStyle(x))
-        self._line_pen(QColor())
 
     def _draw_decorator(self, painter):
         w, h = self.size().width(), self.size().height()
-        self._rect_texture_brush.setStyle(self._style)   
-        painter.setBrush(self._rect_texture_brush)
-        painter.setPen(self._rect_pen)
-        painter.drawLine(QPoint(5, h/2), QPoint(w-10, h/2))
+        self._line_pen.setStyle(self._style)
+        painter.setPen(self._line_pen)
+        painter.drawLine(QPoint(5, h/2), QPoint(w-self._triangle_spacing-5, h/2))
 
     def setStyle(self, vals):
         self.style = vals
@@ -812,7 +811,7 @@ class LineSelectDrop(SelectDrop):
 
     @style.setter
     def style(self, vals):
-        if issubclass(type(vals), Qt.BrushStyle):
+        if issubclass(type(vals), Qt.PenStyle):
             self._style = vals
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
@@ -965,11 +964,67 @@ class LinePopSelector(PopSelector):
     def value(self):
         return self._selected_value
 
+class FontPopSelector(PopSelector):    
+    valueSelected = pyqtSignal(object)
+    def __init__(self,  parent=None):
+        super(FontPopSelector, self).__init__(parent)
+        self._width       = 140
+        self._height      = 140
+        self._line_margin = 5
+        x, y, w, h, dy = 10, 10, 120, 25, 25
+
+        self._pattern_list = [ 
+            [x, y + ( dy * 0 ), w, h,      Qt.SolidLine],
+            [x, y + ( dy * 1 ), w, h,       Qt.DashLine],
+            [x, y + ( dy * 2 ), w, h,        Qt.DotLine],
+            [x, y + ( dy * 3 ), w, h,    Qt.DashDotLine],
+            [x, y + ( dy * 4 ), w, h, Qt.DashDotDotLine]
+        ]
+
+        self._hovered_brush = QBrush(QColor("#E5F1FB"))
+        self._hovered_pen   = QPen(QColor("#0078D7"))        
+        self._line_pen      = QPen(QColor("#3333333"))
+
+    def  _draw_decorator(self, painter):
+        for line_set in self._pattern_list:
+            x, y, w, h, style    = line_set
+            self._selected_value = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
+            pen, brush, style    = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
+            painter.setPen(pen)
+            painter.setBrush(brush)
+            painter.drawRect(x, y, w-3, h-3)
+            self._line_pen.setStyle(style)
+            painter.setPen(self._line_pen)
+            painter.drawLine(QPoint((x + self._line_margin), (y + h/2)), QPoint((x + w - (2 * self._line_margin)), (y + h/2)))
+
+
+    @property
+    def value(self):
+        return self._selected_value  
+
+class m(QWidget):
+    def __init__(self,  parent=None):
+        super(m, self).__init__(parent)
+        self.s = QScrollArea()
+        self.w = scroll_widget()
+        self.s.setWidget(self.w)
+        self.setLayout(HBox(self.s))
+
+class scroll_widget(QWidget):
+        def __init__(self,  parent=None):
+            super(scroll_widget, self).__init__(parent)
+            self.setLayout(VBox(QPushButton(),QPushButton(),QPushButton(),QPushButton(),QPushButton(),QPushButton(),))
+
+
 if __name__ == "__main__":
     def Debugger():
+
         app  = QApplication(sys.argv)
-        form = BrushSelectDialog()
+        # form = BrushSelectDialog()
+        form = m()
         form.show()
         app.exec_()
+        for each in (QFontDatabase().families()):
+            print (each)
         
     Debugger()
