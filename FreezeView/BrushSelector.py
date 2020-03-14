@@ -659,6 +659,8 @@ class BrushSelectDialog(QWidget):
         s = SizeSelectDrop()
 
         b.valueChanged.connect(lambda x : print(x))
+        b.buttonClicked.connect(lambda  : print("main clicked"))
+        b.dropClicked.connect(lambda    : print("drop clicked"))
         l.valueChanged.connect(lambda x : print(x))
         f.valueChanged.connect(lambda x : print(x))
         s.valueChanged.connect(lambda x : print(x))
@@ -670,6 +672,8 @@ class BrushSelectDialog(QWidget):
         ))
 
 class SelectDrop(QPushButton):
+    buttonClicked = pyqtSignal()
+    dropClicked   = pyqtSignal()
     def __init__(self,  parent=None):
         super(SelectDrop, self).__init__(parent)
         self._pop_selector         = None   
@@ -701,43 +705,32 @@ class SelectDrop(QPushButton):
         main_button_brush, main_button_pen = (self._button_hovered_brush, self._button_hovered_pen) if (self._main_button_hovered or self._poped) else (self._button_brush, self._button_pen)
         drop_button_brush, drop_button_pen = (self._button_hovered_brush, self._button_hovered_pen) if (self._drop_button_hovered or self._poped) else (self._button_brush, self._button_pen)
         triangle_brush, triangle_pen       = (QBrush(QColor("#0078D7")),  self._triangle_pen)       if (self._hovered or self._poped) else (QBrush(QColor("#ADADAD")), self._triangle_pen)
-        painter.setBrush(main_button_brush)
-        painter.setPen(main_button_pen)
-        painter.drawRect(0, 0, w-drop_size, h-1)
 
-        painter.setBrush(drop_button_brush)
-        painter.setPen(drop_button_pen)
-        painter.drawRect(w-drop_size, 0, drop_size, h-1)
+        if self._main_button_hovered:
+            self._paint_button(w-drop_size, 0,   drop_size, h-1, painter, drop_button_brush, drop_button_pen)
+            self._paint_button(          0, 0, w-drop_size, h-1, painter, main_button_brush, main_button_pen)
+        else:
+            self._paint_button(          0, 0, w-drop_size, h-1, painter, main_button_brush, main_button_pen)
+            self._paint_button(w-drop_size, 0,   drop_size, h-1, painter, drop_button_brush, drop_button_pen)
 
-        painter.setPen(triangle_pen)
-        painter.setBrush(triangle_brush)
-        painter.drawPolyline(self._genHTriangle(w-(2*self._rect_margin), h/2+3, 4))
+        self._paint_triangle(w-(2*self._rect_margin), h/2+3, 4,  painter, triangle_brush, triangle_pen)
         self._draw_decorator(painter)
         painter.end()        
 
-    def paintEvent_old(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
+    def _paint_button(self, x, y, w, h, painter, brush, pen):
+        painter.setBrush(brush)
+        painter.setPen(pen)
+        painter.drawRect(x, y, w, h)
 
-        w, h                         = self.size().width(), self.size().height()
-        self._poped                  = self._pop_selector.isVisible() if (self._pop_selector) else False
-        button_brush,   button_pen   = (self._button_hovered_brush, self._button_hovered_pen) if (self._hovered or self._poped) else (self._button_brush, self._button_pen)
-        triangle_brush, triangle_pen = (QBrush(QColor("#0078D7")),  self._triangle_pen)       if (self._hovered or self._poped) else (QBrush(QColor("#ADADAD")), self._triangle_pen)
-        painter.setBrush( button_brush)
-        painter.setPen(button_pen)
-        painter.drawRect(0, 0, w-1, h-1)
-        painter.setPen(triangle_pen)
-        painter.setBrush(triangle_brush)
-        painter.drawPolyline(self._genHTriangle(w-(2*self._rect_margin), h/2+3, 4))
-        self._draw_decorator(painter)
-        painter.end()
-
-    def mousePressEvent(self, event):
-        if not(self._click_blocked) and self._drop_button_hovered:
-            self._pop_selector_tab()
-        self._click_blocked = False
+    def _paint_triangle(self, x, y, size, painter, brush, pen):
+        painter.setBrush(brush)
+        painter.setPen(pen)
+        sl, ml   = (0.8 * size), (size * (3**0.5) / 2.2 )
+        hex_poly = QPolygonF()        
+        hex_poly.append(QPointF(x - sl, y - ml))
+        hex_poly.append(QPointF(x, y))
+        hex_poly.append(QPointF(x + sl, y - ml))
+        painter.drawPolyline(hex_poly)
 
     def _draw_decorator(self, painter):
         pass
@@ -754,13 +747,16 @@ class SelectDrop(QPushButton):
             self._pop_selector.hide()
             if self._hovered : self._click_blocked = True
 
-    def _genHTriangle(self, x, y, size):
-        sl, ml   = (0.8 * size), (size * (3**0.5) / 2.2 )
-        hex_poly = QPolygonF()        
-        hex_poly.append(QPointF(x - sl, y - ml))
-        hex_poly.append(QPointF(x, y))
-        hex_poly.append(QPointF(x + sl, y - ml))
-        return hex_poly    
+
+    
+    def mousePressEvent(self, event):
+        if not(self._click_blocked):
+            if self._drop_button_hovered:
+                self._pop_selector_tab()
+                self.dropClicked.emit()
+            if self._main_button_hovered:
+                self.buttonClicked.emit()
+        self._click_blocked = False
 
     def enterEvent(self, event):
         self._hovered = True
@@ -773,12 +769,7 @@ class SelectDrop(QPushButton):
     def mouseMoveEvent(self, event):
         w, h, drop_size = self.size().width(), self.size().height(), (self._triangle_spacing-self._rect_margin)
         self._main_button_hovered, self._drop_button_hovered = (True, False) if (event.pos() in QRect(0, 0, w-drop_size, h) and self._hovered) else (False, True)
-        if self._main_button_hovered:
-            print("main")
-        else:
-            print("drop")
-        self.update()
-        
+        self.update()       
 
 class BrushSelectDrop(SelectDrop):
     valueChanged = pyqtSignal(Qt.BrushStyle)
@@ -874,7 +865,6 @@ class LineSelectDrop(SelectDrop):
         else:
             raise TypeError("%s TypeError: %s" % (inspect.stack()[1].function, vals))
 
-
 class FontSelectDrop(QComboBox):    
     valueChanged = pyqtSignal(str)
     def __init__(self,  parent=None):
@@ -892,7 +882,6 @@ class FontSelectDrop(QComboBox):
         self.setModel(self._itemModel)
         self.setStyleSheet('''QComboBox QAbstractItemView {min-width: 300px;}''')
         self.currentIndexChanged.connect(lambda : self.valueChanged.emit(self.currentText()))
-        
 
 class SizeSelectDrop(QComboBox):    
     valueChanged = pyqtSignal(str)
@@ -911,8 +900,6 @@ class SizeSelectDrop(QComboBox):
 
         self.setModel(self._itemModel)
         self.currentIndexChanged.connect(lambda : self.valueChanged.emit(self.currentText()))
-        
-
 
 class PopSelector(QWidget):
     valueSelected = pyqtSignal(object)
