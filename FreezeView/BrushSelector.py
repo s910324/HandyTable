@@ -653,7 +653,7 @@ class ColorDialog(QWidget):
 class BrushSelectDialog(QWidget):
     def __init__(self,  parent=None):
         super(BrushSelectDialog, self).__init__(parent)    
-        self.setLayout(VBox(QPushButton(), SelectDrop(), BrushSelectDrop(), LineSelectDrop()))
+        self.setLayout(VBox(QPushButton(), SelectDrop(), BrushSelectDrop(), LineSelectDrop(), FontPopSelector()))
 
 class SelectDrop(QPushButton):
     def __init__(self,  parent=None):
@@ -661,14 +661,16 @@ class SelectDrop(QPushButton):
         self._pop_selector         = None   
         self._click_blocked        = False 
         self._hovered              = False
+        self._poped                = False
         self._button_brush         = QBrush(QColor("#E1E1E1"))
         self._button_pen           = QPen(QColor("#ADADAD"))
         self._button_hovered_brush = QBrush(QColor("#E5F1FB"))
         self._button_hovered_pen   = QPen(QColor("#0078D7"))
         self._triangle_brush       = QBrush(QColor("#ADADAD"))
-        self._triangle_pen         = QPen(QColor("#ADADAD"))
+        self._triangle_pen         = QPen(QColor("#565656"))
         self._triangle_spacing     = 12
-        self._rect_margin          = 3
+        self._rect_margin          = 4.5
+        self._triangle_pen.setWidthF(1.1)
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -676,15 +678,16 @@ class SelectDrop(QPushButton):
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.setRenderHint(QPainter.SmoothPixmapTransform,   True) 
 
-        w, h = self.size().width(), self.size().height()
-        button_brush,   button_pen   = (self._button_hovered_brush, self._button_hovered_pen) if self._hovered else (self._button_brush, self._button_pen)
-        triangle_brush, triangle_pen = (QBrush(QColor("#0078D7")),  Qt.NoPen)                 if self._hovered else (QBrush(QColor("#ADADAD")), Qt.NoPen)
+        w, h                         = self.size().width(), self.size().height()
+        self._poped                  = self._pop_selector.isVisible() if (self._pop_selector) else False
+        button_brush,   button_pen   = (self._button_hovered_brush, self._button_hovered_pen) if (self._hovered or self._poped) else (self._button_brush, self._button_pen)
+        triangle_brush, triangle_pen = (QBrush(QColor("#0078D7")),  self._triangle_pen)       if (self._hovered or self._poped) else (QBrush(QColor("#ADADAD")), self._triangle_pen)
         painter.setBrush( button_brush)
         painter.setPen(button_pen)
         painter.drawRect(0, 0, w-1, h-1)
         painter.setPen(triangle_pen)
         painter.setBrush(triangle_brush)
-        painter.drawPolygon(self._genHTriangle(w-(2*self._rect_margin), h/2+3, 6))
+        painter.drawPolyline(self._genHTriangle(w-(2*self._rect_margin), h/2+3, 4))
         self._draw_decorator(painter)
         painter.end()
 
@@ -709,10 +712,10 @@ class SelectDrop(QPushButton):
             if self._hovered : self._click_blocked = True
 
     def _genHTriangle(self, x, y, size):
-        sl, ml   = (0.5 * size), (size * (3**0.5) / 2 )
+        sl, ml   = (0.8 * size), (size * (3**0.5) / 2.2 )
         hex_poly = QPolygonF()        
-        hex_poly.append(QPointF(x, y))
         hex_poly.append(QPointF(x - sl, y - ml))
+        hex_poly.append(QPointF(x, y))
         hex_poly.append(QPointF(x + sl, y - ml))
         return hex_poly    
 
@@ -872,7 +875,7 @@ class PopSelector(QWidget):
         x, y           = point.x(), point.y()
         self.animation = QPropertyAnimation(self, b"geometry")
         self.animation.setDuration(self._animation_duration)
-        self.animation.setStartValue(QRect(x, y, 0, 0))
+        self.animation.setStartValue(QRect(x, y, self._width, 0))
         self.animation.setEndValue(QRect(x, y, self._width, self._height))
         QWidget.show(self)
         self.animation.start()
@@ -945,7 +948,7 @@ class LinePopSelector(PopSelector):
 
         self._hovered_brush = QBrush(QColor("#E5F1FB"))
         self._hovered_pen   = QPen(QColor("#0078D7"))        
-        self._line_pen      = QPen(QColor("#3333333"))
+        self._line_pen      = QPen(QColor("#333333"))
 
     def  _draw_decorator(self, painter):
         for line_set in self._pattern_list:
@@ -964,67 +967,32 @@ class LinePopSelector(PopSelector):
     def value(self):
         return self._selected_value
 
-class FontPopSelector(PopSelector):    
+class FontPopSelector(QComboBox):    
     valueSelected = pyqtSignal(object)
     def __init__(self,  parent=None):
         super(FontPopSelector, self).__init__(parent)
-        self._width       = 140
-        self._height      = 140
-        self._line_margin = 5
-        x, y, w, h, dy = 10, 10, 120, 25, 25
+        self._itemModel = QStandardItemModel()
 
-        self._pattern_list = [ 
-            [x, y + ( dy * 0 ), w, h,      Qt.SolidLine],
-            [x, y + ( dy * 1 ), w, h,       Qt.DashLine],
-            [x, y + ( dy * 2 ), w, h,        Qt.DotLine],
-            [x, y + ( dy * 3 ), w, h,    Qt.DashDotLine],
-            [x, y + ( dy * 4 ), w, h, Qt.DashDotDotLine]
-        ]
+        for index, font_name in enumerate(QFontDatabase().families()):
+            i = QStandardItem(font_name)
+            f = QFont(font_name)
+            f.setPointSize(12)
+            i.setFont(f)
+            self._itemModel.appendRow(i)
+            self._itemModel.setData(self._itemModel.index(index, 0), QSize(20, 20), Qt.SizeHintRole)
 
-        self._hovered_brush = QBrush(QColor("#E5F1FB"))
-        self._hovered_pen   = QPen(QColor("#0078D7"))        
-        self._line_pen      = QPen(QColor("#3333333"))
+        self.setModel(self._itemModel)
+        self.setStyleSheet('''QComboBox QAbstractItemView {min-width: 300px;}''')
+        
 
-    def  _draw_decorator(self, painter):
-        for line_set in self._pattern_list:
-            x, y, w, h, style    = line_set
-            self._selected_value = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
-            pen, brush, style    = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
-            painter.setPen(pen)
-            painter.setBrush(brush)
-            painter.drawRect(x, y, w-3, h-3)
-            self._line_pen.setStyle(style)
-            painter.setPen(self._line_pen)
-            painter.drawLine(QPoint((x + self._line_margin), (y + h/2)), QPoint((x + w - (2 * self._line_margin)), (y + h/2)))
-
-
-    @property
-    def value(self):
-        return self._selected_value  
-
-class m(QWidget):
-    def __init__(self,  parent=None):
-        super(m, self).__init__(parent)
-        self.s = QScrollArea()
-        self.w = scroll_widget()
-        self.s.setWidget(self.w)
-        self.setLayout(HBox(self.s))
-
-class scroll_widget(QWidget):
-        def __init__(self,  parent=None):
-            super(scroll_widget, self).__init__(parent)
-            self.setLayout(VBox(QPushButton(),QPushButton(),QPushButton(),QPushButton(),QPushButton(),QPushButton(),))
-
-
+        
 if __name__ == "__main__":
     def Debugger():
 
         app  = QApplication(sys.argv)
-        # form = BrushSelectDialog()
-        form = m()
+        form = BrushSelectDialog()
+        # form = m()
         form.show()
         app.exec_()
-        for each in (QFontDatabase().families()):
-            print (each)
-        
+
     Debugger()
