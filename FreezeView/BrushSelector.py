@@ -967,8 +967,8 @@ class BrushPopSelector(PopSelector):
     def __init__(self,  parent=None):
         super(BrushPopSelector, self).__init__(parent)
         self._width        = 220
-        self._height       = 340
-        x, y, w, h, dx, dy = 10, 10, 60, 20, 70, 25
+        self._height       = 480
+        x, y, w, h, dx, dy = 10, 30, 60, 20, 70, 25
 
         self._pattern_list = [ 
             [x + ( dx * 0 ), y + ( dy * 0 ), w, h,     Qt.SolidPattern], 
@@ -987,7 +987,22 @@ class BrushPopSelector(PopSelector):
             [x + ( dx * 1 ), y + ( dy * 4 ), w, h,     Qt.BDiagPattern]
         ]
 
-        x, y, w, h, dx, dy = 10, 150, 15, 15, 20, 15
+        x, y, w, h, dx, dy = 10, 190, 15, 15, 20, 15
+
+        self._texture_list = [
+            [x + (dx * 0), y + (dy * 0) - 5, w, h, "#FFFFFF"],[x + (dx * 0), y + (dy * 1), w, h, "#F2F2F2"],[x + (dx * 0), y + (dy * 2), w, h, "#D8D8D8"],[x + (dx * 0), y + (dy * 3), w, h, "#BFBFBF"],[x + (dx * 0), y + (dy * 4), w, h, "#A5A5A5"],[x + (dx * 0), y + (dy * 5), w, h, "#7F7F7F"],[x + (dx * 0), y + (dy * 6) + 5, w, h, "#C00000"], #column  1
+            [x + (dx * 1), y + (dy * 0) - 5, w, h, "#000000"],[x + (dx * 1), y + (dy * 1), w, h, "#595959"],[x + (dx * 1), y + (dy * 2), w, h, "#3F3F3F"],[x + (dx * 1), y + (dy * 3), w, h, "#262626"],[x + (dx * 1), y + (dy * 4), w, h, "#0C0C0C"],[x + (dx * 1), y + (dy * 5), w, h, "#060606"],[x + (dx * 1), y + (dy * 6) + 5, w, h, "#FF0000"], #column  2
+            [x + (dx * 2), y + (dy * 0) - 5, w, h, "#FF0066"],[x + (dx * 2), y + (dy * 1), w, h, "#FFCCE0"],[x + (dx * 2), y + (dy * 2), w, h, "#FE99C1"],[x + (dx * 2), y + (dy * 3), w, h, "#FF65A3"],[x + (dx * 2), y + (dy * 4), w, h, "#BF004C"],[x + (dx * 2), y + (dy * 5), w, h, "#7F0032"],[x + (dx * 2), y + (dy * 6) + 5, w, h, "#FFC000"], #column  3
+            [x + (dx * 3), y + (dy * 0) - 5, w, h, "#FF6600"],[x + (dx * 3), y + (dy * 1), w, h, "#FFE0CC"],[x + (dx * 3), y + (dy * 2), w, h, "#FEC199"],[x + (dx * 3), y + (dy * 3), w, h, "#FFA365"],[x + (dx * 3), y + (dy * 4), w, h, "#BF4C00"],[x + (dx * 3), y + (dy * 5), w, h, "#7F3200"],[x + (dx * 3), y + (dy * 6) + 5, w, h, "#FCFC16"], #column  4
+            [x + (dx * 4), y + (dy * 0) - 5, w, h, "#FFcc00"],[x + (dx * 4), y + (dy * 1), w, h, "#FFF2CC"],[x + (dx * 4), y + (dy * 2), w, h, "#FEE599"],[x + (dx * 4), y + (dy * 3), w, h, "#FFD965"],[x + (dx * 4), y + (dy * 4), w, h, "#BF9000"],[x + (dx * 4), y + (dy * 5), w, h, "#7F6000"],[x + (dx * 4), y + (dy * 6) + 5, w, h, "#92D050"], #column  5
+            [x + (dx * 5), y + (dy * 0) - 5, w, h, "#FFFF00"],[x + (dx * 5), y + (dy * 1), w, h, "#FFFFCC"],[x + (dx * 5), y + (dy * 2), w, h, "#FFFE99"],[x + (dx * 5), y + (dy * 3), w, h, "#FFFF65"],[x + (dx * 5), y + (dy * 4), w, h, "#BFBF00"],[x + (dx * 5), y + (dy * 5), w, h, "#7F7F00"],[x + (dx * 5), y + (dy * 6) + 5, w, h, "#00B050"], #column  6
+            [x + (dx * 6), y + (dy * 0) - 5, w, h, "#92D050"],[x + (dx * 6), y + (dy * 1), w, h, "#E9F5DC"],[x + (dx * 6), y + (dy * 2), w, h, "#D3ECB9"],[x + (dx * 6), y + (dy * 3), w, h, "#BDE295"],[x + (dx * 6), y + (dy * 4), w, h, "#6DAA2D"],[x + (dx * 6), y + (dy * 5), w, h, "#49711E"],[x + (dx * 6), y + (dy * 6) + 5, w, h, "#00B0F0"], #column  7
+            [x + (dx * 7), y + (dy * 0) - 5, w, h, "#00B050"],[x + (dx * 7), y + (dy * 1), w, h, "#BCFFDA"],[x + (dx * 7), y + (dy * 2), w, h, "#79FFB6"],[x + (dx * 7), y + (dy * 3), w, h, "#36FE91"],[x + (dx * 7), y + (dy * 4), w, h, "#00843B"],[x + (dx * 7), y + (dy * 5), w, h, "#005827"],[x + (dx * 7), y + (dy * 6) + 5, w, h, "#0070C0"], #column  8
+            [x + (dx * 8), y + (dy * 0) - 5, w, h, "#00B0F0"],[x + (dx * 8), y + (dy * 1), w, h, "#C9F0FE"],[x + (dx * 8), y + (dy * 2), w, h, "#93E2FF"],[x + (dx * 8), y + (dy * 3), w, h, "#5CD3FF"],[x + (dx * 8), y + (dy * 4), w, h, "#0084B4"],[x + (dx * 8), y + (dy * 5), w, h, "#005878"],[x + (dx * 8), y + (dy * 6) + 5, w, h, "#002060"], #column  9
+            [x + (dx * 9), y + (dy * 0) - 5, w, h, "#0070C0"],[x + (dx * 9), y + (dy * 1), w, h, "#BFE4FF"],[x + (dx * 9), y + (dy * 2), w, h, "#7FCAFF"],[x + (dx * 9), y + (dy * 3), w, h, "#40AFFF"],[x + (dx * 9), y + (dy * 4), w, h, "#005390"],[x + (dx * 9), y + (dy * 5), w, h, "#003760"],[x + (dx * 9), y + (dy * 6) + 5, w, h, "#A380C0"]  #column 10
+        ]
+
+        x, y, w, h, dx, dy = 10, 340, 15, 15, 20, 15
 
         self._color_list = [
             [x + (dx * 0), y + (dy * 0) - 5, w, h, "#FFFFFF"],[x + (dx * 0), y + (dy * 1), w, h, "#F2F2F2"],[x + (dx * 0), y + (dy * 2), w, h, "#D8D8D8"],[x + (dx * 0), y + (dy * 3), w, h, "#BFBFBF"],[x + (dx * 0), y + (dy * 4), w, h, "#A5A5A5"],[x + (dx * 0), y + (dy * 5), w, h, "#7F7F7F"],[x + (dx * 0), y + (dy * 6) + 5, w, h, "#C00000"], #column  1
@@ -1002,13 +1017,17 @@ class BrushPopSelector(PopSelector):
             [x + (dx * 9), y + (dy * 0) - 5, w, h, "#0070C0"],[x + (dx * 9), y + (dy * 1), w, h, "#BFE4FF"],[x + (dx * 9), y + (dy * 2), w, h, "#7FCAFF"],[x + (dx * 9), y + (dy * 3), w, h, "#40AFFF"],[x + (dx * 9), y + (dy * 4), w, h, "#005390"],[x + (dx * 9), y + (dy * 5), w, h, "#003760"],[x + (dx * 9), y + (dy * 6) + 5, w, h, "#A380C0"]  #column 10
         ]
 
-        self._rect_brush    = QBrush(QColor("#333333"))
-        self._rect_pen      = QPen(QColor("#333333"))     
-        self._hovered_pen   = QPen(QColor("#0078D7"))
-        self._hovered_brush = QBrush(QColor("#E5F1FB"))
+        self._rect_brush      = QBrush(QColor("#333333"))
+        self._rect_pen        = QPen(QColor("#333333"))     
+        self._hovered_pen     = QPen(QColor("#0078D7"))
+        self._hovered_brush   = QBrush(QColor("#E5F1FB"))
+        self._text_pen        = QPen(QColor("#000000"))
+        self._text_rect_brush = QBrush(QColor("#DDDDDD"))
+        self._text_rect_pen   = QPen(QColor("#BBBBBB"))
         self._rect_pen.setWidth(1)
 
     def  _draw_decorator(self, painter):
+        self._draw_text_label(painter, 5, "Style")
         for rect_set in self._pattern_list:
             x, y, w, h, style    = rect_set
             self._selected_value = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
@@ -1022,12 +1041,46 @@ class BrushPopSelector(PopSelector):
             painter.setBrush(self._rect_brush)
             painter.drawRect(x, y, w-3, h-3)
 
-        for rect_set in self._color_list:
-            x, y, w, h, color    = rect_set
-            pen    = self._hovered_pen if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else Qt.NoPen
-            painter.setPen(pen)
+        select_rect = None
+        self._draw_text_label(painter, 160, "Texture color")
+        for rect_set in self._texture_list:
+            x, y, w, h, color = rect_set
+            
+            if (self._hover_pos and QRect(x, y, w, h).contains(self._hover_pos)):
+                select_rect = QRect(x, y, w, h)
+
+            painter.setPen(Qt.NoPen)
             painter.setBrush(QColor(color))
-            painter.drawRect(x,y,w,h)          
+            painter.drawRect(x,y,w,h) 
+
+        if select_rect :
+            painter.setPen(self._hovered_pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(select_rect) 
+
+
+        self._draw_text_label(painter, 310, "Background color")
+        for rect_set in self._color_list:
+            x, y, w, h, color = rect_set
+
+            if (self._hover_pos and QRect(x, y, w, h).contains(self._hover_pos)):
+                select_rect = QRect(x, y, w, h)
+
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(color))
+            painter.drawRect(x,y,w,h)      
+
+        if select_rect :
+            painter.setPen(self._hovered_pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(select_rect) 
+
+    def _draw_text_label(self, painter, y, text):
+        painter.setBrush(self._text_rect_brush)
+        painter.setPen(self._text_rect_pen)
+        painter.drawRect(8, y, (self._width - 20), 20)
+        painter.setPen(self._text_pen)
+        painter.drawText(13, y, (self._width - 20), 20, Qt.AlignLeft|Qt.AlignVCenter, text)
 
     @property
     def value(self):
@@ -1081,6 +1134,7 @@ class BrushPopSelector_old(PopSelector):
     @property
     def value(self):
         return self._selected_value
+
 class LinePopSelector(PopSelector):    
     valueSelected = pyqtSignal(object)
     def __init__(self,  parent=None):
