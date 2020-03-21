@@ -968,7 +968,7 @@ class BrushPopSelector(PopSelector):
         super(BrushPopSelector, self).__init__(parent)
         self._width        = 220
         self._height       = 480
-        x, y, w, h, dx, dy = 10, 30, 60, 20, 70, 25
+        x, y, w, h, dx, dy = 0, 0, 60, 20, 70, 25
         self._pattern_list = [ 
             [x + ( dx * 0 ), y + ( dy * 0 ), w, h,     Qt.SolidPattern,  True],
             [x + ( dx * 1 ), y + ( dy * 0 ), w, h,    Qt.Dense1Pattern, False],
@@ -1023,37 +1023,49 @@ class BrushPopSelector(PopSelector):
         self._rect_pen.setWidth(1)
 
     def  _draw_decorator(self, painter):
-        self._draw_text_label(painter, 10, 5, "Style")
-        for rect_set in self._pattern_list:
-            x, y, w, h, style, selected = rect_set
-            self._selected_value        = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
-            pen, brush, style           = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
+        self._draw_pattern(     painter, 10,   5, self._pattern_list, "Pattern style")
+        self._draw_color_bundle(painter, 10, 160, self._texture_list, "Texture color")
+        self._draw_color_bundle(painter, 10, 320, self._color_list,   "Base color")
+
+    def _draw_pattern(self, painter, x, y, pattern_list, text, spacing = 25):
+        self._draw_text_label(painter, x-2, y, text)
+
+        for rect_set in pattern_list:
+            rx, ry, rw, rh, style, selected = rect_set
+            rx, ry                          = rx + x, ry + y + spacing
+            self._selected_value            = style if (self._clicked_pos and (self._clicked_pos in QRect(rx, ry, rw, rh))) else self._selected_value
+            pen, brush, style               = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(rx, ry, rw, rh)) else (Qt.NoPen, Qt.NoBrush, style)
             painter.setPen(pen)
             painter.setBrush(brush)
-            painter.drawRect(x-3, y-3, w+4, h+4)
+            painter.drawRect(rx-3, ry-3, rw+4, rh+4)
 
             self._rect_brush.setStyle(style)
             painter.setPen(self._rect_pen)
             painter.setBrush(self._rect_brush)
-            painter.drawRect(x, y, w-3, h-3)
-
-        self._draw_color_bundle(painter, 10, 160, self._texture_list, "Texture color")
-        self._draw_color_bundle(painter, 10, 320, self._color_list,   "Base color")
-
+            painter.drawRect(rx, ry, rw-3, rh-3)    
 
     def _draw_color_bundle(self, painter, x, y, item_list, text, spacing = 30):
         selected_rect  = None
         selected_color = None
         hovered_rect   = None
         hovered_color  = None
-        self._draw_text_label(painter, x-2, y, text)
+        self._draw_text_label(painter, x-2, y, text)     
+
+        valid_selection = False
+        for rect_set in item_list:
+            rx, ry, rw, rh = rect_set[0:4]
+            if (self._clicked_pos and QRect((rx + x), (ry + y + spacing), rw, rh).contains(self._clicked_pos)):
+                valid_selection = True  
+                break
+
         for index, rect_set in enumerate(item_list):
             rx, ry, rw, rh, color, selected = rect_set
             rx, ry = (rx + x), (ry + y + spacing)
             
-            self._texture_list[index][5] = True if (self._clicked_pos and QRect(rx, ry, rw, rh).contains(self._clicked_pos)) else False
+            if valid_selection:
+                item_list[index][5] = True if (self._clicked_pos and QRect(rx, ry, rw, rh).contains(self._clicked_pos)) else False
 
-            if self._texture_list[index][5] == True:
+            if item_list[index][5] == True:
                 selected_color, selected_rect = color, (rx, ry, rw, rh)
 
             if (self._hover_pos and QRect(rx, ry, rw, rh).contains(self._hover_pos)):
