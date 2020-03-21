@@ -969,52 +969,48 @@ class BrushPopSelector(PopSelector):
         self._width        = 220
         self._height       = 480
         x, y, w, h, dx, dy = 10, 30, 60, 20, 70, 25
-
         self._pattern_list = [ 
-            [x + ( dx * 0 ), y + ( dy * 0 ), w, h,     Qt.SolidPattern], 
-            [x + ( dx * 1 ), y + ( dy * 0 ), w, h,    Qt.Dense1Pattern], 
-            [x + ( dx * 2 ), y + ( dy * 0 ), w, h,    Qt.Dense2Pattern], 
-            [x + ( dx * 0 ), y + ( dy * 1 ), w, h,    Qt.Dense3Pattern], 
-            [x + ( dx * 1 ), y + ( dy * 1 ), w, h,     Qt.FDiagPattern], 
-            [x + ( dx * 2 ), y + ( dy * 1 ), w, h,    Qt.Dense4Pattern], 
-            [x + ( dx * 0 ), y + ( dy * 2 ), w, h,    Qt.Dense5Pattern], 
-            [x + ( dx * 1 ), y + ( dy * 2 ), w, h,    Qt.Dense6Pattern], 
-            [x + ( dx * 2 ), y + ( dy * 2 ), w, h,    Qt.Dense7Pattern], 
-            [x + ( dx * 0 ), y + ( dy * 3 ), w, h, Qt.DiagCrossPattern],
-            [x + ( dx * 1 ), y + ( dy * 3 ), w, h,       Qt.HorPattern], 
-            [x + ( dx * 2 ), y + ( dy * 3 ), w, h,       Qt.VerPattern], 
-            [x + ( dx * 0 ), y + ( dy * 4 ), w, h,     Qt.CrossPattern], 
-            [x + ( dx * 1 ), y + ( dy * 4 ), w, h,     Qt.BDiagPattern]
+            [x + ( dx * 0 ), y + ( dy * 0 ), w, h,     Qt.SolidPattern,  True],
+            [x + ( dx * 1 ), y + ( dy * 0 ), w, h,    Qt.Dense1Pattern, False],
+            [x + ( dx * 2 ), y + ( dy * 0 ), w, h,    Qt.Dense2Pattern, False],
+            [x + ( dx * 0 ), y + ( dy * 1 ), w, h,    Qt.Dense3Pattern, False],
+            [x + ( dx * 1 ), y + ( dy * 1 ), w, h,     Qt.FDiagPattern, False],
+            [x + ( dx * 2 ), y + ( dy * 1 ), w, h,    Qt.Dense4Pattern, False],
+            [x + ( dx * 0 ), y + ( dy * 2 ), w, h,    Qt.Dense5Pattern, False],
+            [x + ( dx * 1 ), y + ( dy * 2 ), w, h,    Qt.Dense6Pattern, False],
+            [x + ( dx * 2 ), y + ( dy * 2 ), w, h,    Qt.Dense7Pattern, False],
+            [x + ( dx * 0 ), y + ( dy * 3 ), w, h, Qt.DiagCrossPattern, False],
+            [x + ( dx * 1 ), y + ( dy * 3 ), w, h,       Qt.HorPattern, False],
+            [x + ( dx * 2 ), y + ( dy * 3 ), w, h,       Qt.VerPattern, False],
+            [x + ( dx * 0 ), y + ( dy * 4 ), w, h,     Qt.CrossPattern, False],
+            [x + ( dx * 1 ), y + ( dy * 4 ), w, h,     Qt.BDiagPattern, False]
         ]
 
-        x, y, w, h, dx, dy = 10, 190, 15, 15, 20, 15
-
+        x, y, w, h, dx, dy = 0, 0, 15, 15, 20, 15
         self._texture_list = [
-            [x + (dx * 0), y + (dy * 0) - 5, w, h, "#FFFFFF"],[x + (dx * 0), y + (dy * 1), w, h, "#F2F2F2"],[x + (dx * 0), y + (dy * 2), w, h, "#D8D8D8"],[x + (dx * 0), y + (dy * 3), w, h, "#BFBFBF"],[x + (dx * 0), y + (dy * 4), w, h, "#A5A5A5"],[x + (dx * 0), y + (dy * 5), w, h, "#7F7F7F"],[x + (dx * 0), y + (dy * 6) + 5, w, h, "#C00000"], #column  1
-            [x + (dx * 1), y + (dy * 0) - 5, w, h, "#000000"],[x + (dx * 1), y + (dy * 1), w, h, "#595959"],[x + (dx * 1), y + (dy * 2), w, h, "#3F3F3F"],[x + (dx * 1), y + (dy * 3), w, h, "#262626"],[x + (dx * 1), y + (dy * 4), w, h, "#0C0C0C"],[x + (dx * 1), y + (dy * 5), w, h, "#060606"],[x + (dx * 1), y + (dy * 6) + 5, w, h, "#FF0000"], #column  2
-            [x + (dx * 2), y + (dy * 0) - 5, w, h, "#FF0066"],[x + (dx * 2), y + (dy * 1), w, h, "#FFCCE0"],[x + (dx * 2), y + (dy * 2), w, h, "#FE99C1"],[x + (dx * 2), y + (dy * 3), w, h, "#FF65A3"],[x + (dx * 2), y + (dy * 4), w, h, "#BF004C"],[x + (dx * 2), y + (dy * 5), w, h, "#7F0032"],[x + (dx * 2), y + (dy * 6) + 5, w, h, "#FFC000"], #column  3
-            [x + (dx * 3), y + (dy * 0) - 5, w, h, "#FF6600"],[x + (dx * 3), y + (dy * 1), w, h, "#FFE0CC"],[x + (dx * 3), y + (dy * 2), w, h, "#FEC199"],[x + (dx * 3), y + (dy * 3), w, h, "#FFA365"],[x + (dx * 3), y + (dy * 4), w, h, "#BF4C00"],[x + (dx * 3), y + (dy * 5), w, h, "#7F3200"],[x + (dx * 3), y + (dy * 6) + 5, w, h, "#FCFC16"], #column  4
-            [x + (dx * 4), y + (dy * 0) - 5, w, h, "#FFcc00"],[x + (dx * 4), y + (dy * 1), w, h, "#FFF2CC"],[x + (dx * 4), y + (dy * 2), w, h, "#FEE599"],[x + (dx * 4), y + (dy * 3), w, h, "#FFD965"],[x + (dx * 4), y + (dy * 4), w, h, "#BF9000"],[x + (dx * 4), y + (dy * 5), w, h, "#7F6000"],[x + (dx * 4), y + (dy * 6) + 5, w, h, "#92D050"], #column  5
-            [x + (dx * 5), y + (dy * 0) - 5, w, h, "#FFFF00"],[x + (dx * 5), y + (dy * 1), w, h, "#FFFFCC"],[x + (dx * 5), y + (dy * 2), w, h, "#FFFE99"],[x + (dx * 5), y + (dy * 3), w, h, "#FFFF65"],[x + (dx * 5), y + (dy * 4), w, h, "#BFBF00"],[x + (dx * 5), y + (dy * 5), w, h, "#7F7F00"],[x + (dx * 5), y + (dy * 6) + 5, w, h, "#00B050"], #column  6
-            [x + (dx * 6), y + (dy * 0) - 5, w, h, "#92D050"],[x + (dx * 6), y + (dy * 1), w, h, "#E9F5DC"],[x + (dx * 6), y + (dy * 2), w, h, "#D3ECB9"],[x + (dx * 6), y + (dy * 3), w, h, "#BDE295"],[x + (dx * 6), y + (dy * 4), w, h, "#6DAA2D"],[x + (dx * 6), y + (dy * 5), w, h, "#49711E"],[x + (dx * 6), y + (dy * 6) + 5, w, h, "#00B0F0"], #column  7
-            [x + (dx * 7), y + (dy * 0) - 5, w, h, "#00B050"],[x + (dx * 7), y + (dy * 1), w, h, "#BCFFDA"],[x + (dx * 7), y + (dy * 2), w, h, "#79FFB6"],[x + (dx * 7), y + (dy * 3), w, h, "#36FE91"],[x + (dx * 7), y + (dy * 4), w, h, "#00843B"],[x + (dx * 7), y + (dy * 5), w, h, "#005827"],[x + (dx * 7), y + (dy * 6) + 5, w, h, "#0070C0"], #column  8
-            [x + (dx * 8), y + (dy * 0) - 5, w, h, "#00B0F0"],[x + (dx * 8), y + (dy * 1), w, h, "#C9F0FE"],[x + (dx * 8), y + (dy * 2), w, h, "#93E2FF"],[x + (dx * 8), y + (dy * 3), w, h, "#5CD3FF"],[x + (dx * 8), y + (dy * 4), w, h, "#0084B4"],[x + (dx * 8), y + (dy * 5), w, h, "#005878"],[x + (dx * 8), y + (dy * 6) + 5, w, h, "#002060"], #column  9
-            [x + (dx * 9), y + (dy * 0) - 5, w, h, "#0070C0"],[x + (dx * 9), y + (dy * 1), w, h, "#BFE4FF"],[x + (dx * 9), y + (dy * 2), w, h, "#7FCAFF"],[x + (dx * 9), y + (dy * 3), w, h, "#40AFFF"],[x + (dx * 9), y + (dy * 4), w, h, "#005390"],[x + (dx * 9), y + (dy * 5), w, h, "#003760"],[x + (dx * 9), y + (dy * 6) + 5, w, h, "#A380C0"]  #column 10
+            [x + (dx * 0), y + (dy * 0) - 5, w, h, "#FFFFFF", False],[x + (dx * 0), y + (dy * 1), w, h, "#F2F2F2", False],[x + (dx * 0), y + (dy * 2), w, h, "#D8D8D8", False],[x + (dx * 0), y + (dy * 3), w, h, "#BFBFBF", False],[x + (dx * 0), y + (dy * 4), w, h, "#A5A5A5", False],[x + (dx * 0), y + (dy * 5), w, h, "#7F7F7F", False],[x + (dx * 0), y + (dy * 6) + 5, w, h, "#C00000", False], #column  1
+            [x + (dx * 1), y + (dy * 0) - 5, w, h, "#000000",  True],[x + (dx * 1), y + (dy * 1), w, h, "#595959", False],[x + (dx * 1), y + (dy * 2), w, h, "#3F3F3F", False],[x + (dx * 1), y + (dy * 3), w, h, "#262626", False],[x + (dx * 1), y + (dy * 4), w, h, "#0C0C0C", False],[x + (dx * 1), y + (dy * 5), w, h, "#060606", False],[x + (dx * 1), y + (dy * 6) + 5, w, h, "#FF0000", False], #column  2
+            [x + (dx * 2), y + (dy * 0) - 5, w, h, "#FF0066", False],[x + (dx * 2), y + (dy * 1), w, h, "#FFCCE0", False],[x + (dx * 2), y + (dy * 2), w, h, "#FE99C1", False],[x + (dx * 2), y + (dy * 3), w, h, "#FF65A3", False],[x + (dx * 2), y + (dy * 4), w, h, "#BF004C", False],[x + (dx * 2), y + (dy * 5), w, h, "#7F0032", False],[x + (dx * 2), y + (dy * 6) + 5, w, h, "#FFC000", False], #column  3
+            [x + (dx * 3), y + (dy * 0) - 5, w, h, "#FF6600", False],[x + (dx * 3), y + (dy * 1), w, h, "#FFE0CC", False],[x + (dx * 3), y + (dy * 2), w, h, "#FEC199", False],[x + (dx * 3), y + (dy * 3), w, h, "#FFA365", False],[x + (dx * 3), y + (dy * 4), w, h, "#BF4C00", False],[x + (dx * 3), y + (dy * 5), w, h, "#7F3200", False],[x + (dx * 3), y + (dy * 6) + 5, w, h, "#FCFC16", False], #column  4
+            [x + (dx * 4), y + (dy * 0) - 5, w, h, "#FFcc00", False],[x + (dx * 4), y + (dy * 1), w, h, "#FFF2CC", False],[x + (dx * 4), y + (dy * 2), w, h, "#FEE599", False],[x + (dx * 4), y + (dy * 3), w, h, "#FFD965", False],[x + (dx * 4), y + (dy * 4), w, h, "#BF9000", False],[x + (dx * 4), y + (dy * 5), w, h, "#7F6000", False],[x + (dx * 4), y + (dy * 6) + 5, w, h, "#92D050", False], #column  5
+            [x + (dx * 5), y + (dy * 0) - 5, w, h, "#FFFF00", False],[x + (dx * 5), y + (dy * 1), w, h, "#FFFFCC", False],[x + (dx * 5), y + (dy * 2), w, h, "#FFFE99", False],[x + (dx * 5), y + (dy * 3), w, h, "#FFFF65", False],[x + (dx * 5), y + (dy * 4), w, h, "#BFBF00", False],[x + (dx * 5), y + (dy * 5), w, h, "#7F7F00", False],[x + (dx * 5), y + (dy * 6) + 5, w, h, "#00B050", False], #column  6
+            [x + (dx * 6), y + (dy * 0) - 5, w, h, "#92D050", False],[x + (dx * 6), y + (dy * 1), w, h, "#E9F5DC", False],[x + (dx * 6), y + (dy * 2), w, h, "#D3ECB9", False],[x + (dx * 6), y + (dy * 3), w, h, "#BDE295", False],[x + (dx * 6), y + (dy * 4), w, h, "#6DAA2D", False],[x + (dx * 6), y + (dy * 5), w, h, "#49711E", False],[x + (dx * 6), y + (dy * 6) + 5, w, h, "#00B0F0", False], #column  7
+            [x + (dx * 7), y + (dy * 0) - 5, w, h, "#00B050", False],[x + (dx * 7), y + (dy * 1), w, h, "#BCFFDA", False],[x + (dx * 7), y + (dy * 2), w, h, "#79FFB6", False],[x + (dx * 7), y + (dy * 3), w, h, "#36FE91", False],[x + (dx * 7), y + (dy * 4), w, h, "#00843B", False],[x + (dx * 7), y + (dy * 5), w, h, "#005827", False],[x + (dx * 7), y + (dy * 6) + 5, w, h, "#0070C0", False], #column  8
+            [x + (dx * 8), y + (dy * 0) - 5, w, h, "#00B0F0", False],[x + (dx * 8), y + (dy * 1), w, h, "#C9F0FE", False],[x + (dx * 8), y + (dy * 2), w, h, "#93E2FF", False],[x + (dx * 8), y + (dy * 3), w, h, "#5CD3FF", False],[x + (dx * 8), y + (dy * 4), w, h, "#0084B4", False],[x + (dx * 8), y + (dy * 5), w, h, "#005878", False],[x + (dx * 8), y + (dy * 6) + 5, w, h, "#002060", False], #column  9
+            [x + (dx * 9), y + (dy * 0) - 5, w, h, "#0070C0", False],[x + (dx * 9), y + (dy * 1), w, h, "#BFE4FF", False],[x + (dx * 9), y + (dy * 2), w, h, "#7FCAFF", False],[x + (dx * 9), y + (dy * 3), w, h, "#40AFFF", False],[x + (dx * 9), y + (dy * 4), w, h, "#005390", False],[x + (dx * 9), y + (dy * 5), w, h, "#003760", False],[x + (dx * 9), y + (dy * 6) + 5, w, h, "#A380C0", False]  #column 10
         ]
 
-        x, y, w, h, dx, dy = 10, 340, 15, 15, 20, 15
-
-        self._color_list = [
-            [x + (dx * 0), y + (dy * 0) - 5, w, h, "#FFFFFF"],[x + (dx * 0), y + (dy * 1), w, h, "#F2F2F2"],[x + (dx * 0), y + (dy * 2), w, h, "#D8D8D8"],[x + (dx * 0), y + (dy * 3), w, h, "#BFBFBF"],[x + (dx * 0), y + (dy * 4), w, h, "#A5A5A5"],[x + (dx * 0), y + (dy * 5), w, h, "#7F7F7F"],[x + (dx * 0), y + (dy * 6) + 5, w, h, "#C00000"], #column  1
-            [x + (dx * 1), y + (dy * 0) - 5, w, h, "#000000"],[x + (dx * 1), y + (dy * 1), w, h, "#595959"],[x + (dx * 1), y + (dy * 2), w, h, "#3F3F3F"],[x + (dx * 1), y + (dy * 3), w, h, "#262626"],[x + (dx * 1), y + (dy * 4), w, h, "#0C0C0C"],[x + (dx * 1), y + (dy * 5), w, h, "#060606"],[x + (dx * 1), y + (dy * 6) + 5, w, h, "#FF0000"], #column  2
-            [x + (dx * 2), y + (dy * 0) - 5, w, h, "#FF0066"],[x + (dx * 2), y + (dy * 1), w, h, "#FFCCE0"],[x + (dx * 2), y + (dy * 2), w, h, "#FE99C1"],[x + (dx * 2), y + (dy * 3), w, h, "#FF65A3"],[x + (dx * 2), y + (dy * 4), w, h, "#BF004C"],[x + (dx * 2), y + (dy * 5), w, h, "#7F0032"],[x + (dx * 2), y + (dy * 6) + 5, w, h, "#FFC000"], #column  3
-            [x + (dx * 3), y + (dy * 0) - 5, w, h, "#FF6600"],[x + (dx * 3), y + (dy * 1), w, h, "#FFE0CC"],[x + (dx * 3), y + (dy * 2), w, h, "#FEC199"],[x + (dx * 3), y + (dy * 3), w, h, "#FFA365"],[x + (dx * 3), y + (dy * 4), w, h, "#BF4C00"],[x + (dx * 3), y + (dy * 5), w, h, "#7F3200"],[x + (dx * 3), y + (dy * 6) + 5, w, h, "#FCFC16"], #column  4
-            [x + (dx * 4), y + (dy * 0) - 5, w, h, "#FFcc00"],[x + (dx * 4), y + (dy * 1), w, h, "#FFF2CC"],[x + (dx * 4), y + (dy * 2), w, h, "#FEE599"],[x + (dx * 4), y + (dy * 3), w, h, "#FFD965"],[x + (dx * 4), y + (dy * 4), w, h, "#BF9000"],[x + (dx * 4), y + (dy * 5), w, h, "#7F6000"],[x + (dx * 4), y + (dy * 6) + 5, w, h, "#92D050"], #column  5
-            [x + (dx * 5), y + (dy * 0) - 5, w, h, "#FFFF00"],[x + (dx * 5), y + (dy * 1), w, h, "#FFFFCC"],[x + (dx * 5), y + (dy * 2), w, h, "#FFFE99"],[x + (dx * 5), y + (dy * 3), w, h, "#FFFF65"],[x + (dx * 5), y + (dy * 4), w, h, "#BFBF00"],[x + (dx * 5), y + (dy * 5), w, h, "#7F7F00"],[x + (dx * 5), y + (dy * 6) + 5, w, h, "#00B050"], #column  6
-            [x + (dx * 6), y + (dy * 0) - 5, w, h, "#92D050"],[x + (dx * 6), y + (dy * 1), w, h, "#E9F5DC"],[x + (dx * 6), y + (dy * 2), w, h, "#D3ECB9"],[x + (dx * 6), y + (dy * 3), w, h, "#BDE295"],[x + (dx * 6), y + (dy * 4), w, h, "#6DAA2D"],[x + (dx * 6), y + (dy * 5), w, h, "#49711E"],[x + (dx * 6), y + (dy * 6) + 5, w, h, "#00B0F0"], #column  7
-            [x + (dx * 7), y + (dy * 0) - 5, w, h, "#00B050"],[x + (dx * 7), y + (dy * 1), w, h, "#BCFFDA"],[x + (dx * 7), y + (dy * 2), w, h, "#79FFB6"],[x + (dx * 7), y + (dy * 3), w, h, "#36FE91"],[x + (dx * 7), y + (dy * 4), w, h, "#00843B"],[x + (dx * 7), y + (dy * 5), w, h, "#005827"],[x + (dx * 7), y + (dy * 6) + 5, w, h, "#0070C0"], #column  8
-            [x + (dx * 8), y + (dy * 0) - 5, w, h, "#00B0F0"],[x + (dx * 8), y + (dy * 1), w, h, "#C9F0FE"],[x + (dx * 8), y + (dy * 2), w, h, "#93E2FF"],[x + (dx * 8), y + (dy * 3), w, h, "#5CD3FF"],[x + (dx * 8), y + (dy * 4), w, h, "#0084B4"],[x + (dx * 8), y + (dy * 5), w, h, "#005878"],[x + (dx * 8), y + (dy * 6) + 5, w, h, "#002060"], #column  9
-            [x + (dx * 9), y + (dy * 0) - 5, w, h, "#0070C0"],[x + (dx * 9), y + (dy * 1), w, h, "#BFE4FF"],[x + (dx * 9), y + (dy * 2), w, h, "#7FCAFF"],[x + (dx * 9), y + (dy * 3), w, h, "#40AFFF"],[x + (dx * 9), y + (dy * 4), w, h, "#005390"],[x + (dx * 9), y + (dy * 5), w, h, "#003760"],[x + (dx * 9), y + (dy * 6) + 5, w, h, "#A380C0"]  #column 10
+        self._color_list   = [
+            [x + (dx * 0), y + (dy * 0) - 5, w, h, "#FFFFFF",  True],[x + (dx * 0), y + (dy * 1), w, h, "#F2F2F2", False],[x + (dx * 0), y + (dy * 2), w, h, "#D8D8D8", False],[x + (dx * 0), y + (dy * 3), w, h, "#BFBFBF", False],[x + (dx * 0), y + (dy * 4), w, h, "#A5A5A5", False],[x + (dx * 0), y + (dy * 5), w, h, "#7F7F7F", False],[x + (dx * 0), y + (dy * 6) + 5, w, h, "#C00000", False], #column  1
+            [x + (dx * 1), y + (dy * 0) - 5, w, h, "#000000", False],[x + (dx * 1), y + (dy * 1), w, h, "#595959", False],[x + (dx * 1), y + (dy * 2), w, h, "#3F3F3F", False],[x + (dx * 1), y + (dy * 3), w, h, "#262626", False],[x + (dx * 1), y + (dy * 4), w, h, "#0C0C0C", False],[x + (dx * 1), y + (dy * 5), w, h, "#060606", False],[x + (dx * 1), y + (dy * 6) + 5, w, h, "#FF0000", False], #column  2
+            [x + (dx * 2), y + (dy * 0) - 5, w, h, "#FF0066", False],[x + (dx * 2), y + (dy * 1), w, h, "#FFCCE0", False],[x + (dx * 2), y + (dy * 2), w, h, "#FE99C1", False],[x + (dx * 2), y + (dy * 3), w, h, "#FF65A3", False],[x + (dx * 2), y + (dy * 4), w, h, "#BF004C", False],[x + (dx * 2), y + (dy * 5), w, h, "#7F0032", False],[x + (dx * 2), y + (dy * 6) + 5, w, h, "#FFC000", False], #column  3
+            [x + (dx * 3), y + (dy * 0) - 5, w, h, "#FF6600", False],[x + (dx * 3), y + (dy * 1), w, h, "#FFE0CC", False],[x + (dx * 3), y + (dy * 2), w, h, "#FEC199", False],[x + (dx * 3), y + (dy * 3), w, h, "#FFA365", False],[x + (dx * 3), y + (dy * 4), w, h, "#BF4C00", False],[x + (dx * 3), y + (dy * 5), w, h, "#7F3200", False],[x + (dx * 3), y + (dy * 6) + 5, w, h, "#FCFC16", False], #column  4
+            [x + (dx * 4), y + (dy * 0) - 5, w, h, "#FFcc00", False],[x + (dx * 4), y + (dy * 1), w, h, "#FFF2CC", False],[x + (dx * 4), y + (dy * 2), w, h, "#FEE599", False],[x + (dx * 4), y + (dy * 3), w, h, "#FFD965", False],[x + (dx * 4), y + (dy * 4), w, h, "#BF9000", False],[x + (dx * 4), y + (dy * 5), w, h, "#7F6000", False],[x + (dx * 4), y + (dy * 6) + 5, w, h, "#92D050", False], #column  5
+            [x + (dx * 5), y + (dy * 0) - 5, w, h, "#FFFF00", False],[x + (dx * 5), y + (dy * 1), w, h, "#FFFFCC", False],[x + (dx * 5), y + (dy * 2), w, h, "#FFFE99", False],[x + (dx * 5), y + (dy * 3), w, h, "#FFFF65", False],[x + (dx * 5), y + (dy * 4), w, h, "#BFBF00", False],[x + (dx * 5), y + (dy * 5), w, h, "#7F7F00", False],[x + (dx * 5), y + (dy * 6) + 5, w, h, "#00B050", False], #column  6
+            [x + (dx * 6), y + (dy * 0) - 5, w, h, "#92D050", False],[x + (dx * 6), y + (dy * 1), w, h, "#E9F5DC", False],[x + (dx * 6), y + (dy * 2), w, h, "#D3ECB9", False],[x + (dx * 6), y + (dy * 3), w, h, "#BDE295", False],[x + (dx * 6), y + (dy * 4), w, h, "#6DAA2D", False],[x + (dx * 6), y + (dy * 5), w, h, "#49711E", False],[x + (dx * 6), y + (dy * 6) + 5, w, h, "#00B0F0", False], #column  7
+            [x + (dx * 7), y + (dy * 0) - 5, w, h, "#00B050", False],[x + (dx * 7), y + (dy * 1), w, h, "#BCFFDA", False],[x + (dx * 7), y + (dy * 2), w, h, "#79FFB6", False],[x + (dx * 7), y + (dy * 3), w, h, "#36FE91", False],[x + (dx * 7), y + (dy * 4), w, h, "#00843B", False],[x + (dx * 7), y + (dy * 5), w, h, "#005827", False],[x + (dx * 7), y + (dy * 6) + 5, w, h, "#0070C0", False], #column  8
+            [x + (dx * 8), y + (dy * 0) - 5, w, h, "#00B0F0", False],[x + (dx * 8), y + (dy * 1), w, h, "#C9F0FE", False],[x + (dx * 8), y + (dy * 2), w, h, "#93E2FF", False],[x + (dx * 8), y + (dy * 3), w, h, "#5CD3FF", False],[x + (dx * 8), y + (dy * 4), w, h, "#0084B4", False],[x + (dx * 8), y + (dy * 5), w, h, "#005878", False],[x + (dx * 8), y + (dy * 6) + 5, w, h, "#002060", False], #column  9
+            [x + (dx * 9), y + (dy * 0) - 5, w, h, "#0070C0", False],[x + (dx * 9), y + (dy * 1), w, h, "#BFE4FF", False],[x + (dx * 9), y + (dy * 2), w, h, "#7FCAFF", False],[x + (dx * 9), y + (dy * 3), w, h, "#40AFFF", False],[x + (dx * 9), y + (dy * 4), w, h, "#005390", False],[x + (dx * 9), y + (dy * 5), w, h, "#003760", False],[x + (dx * 9), y + (dy * 6) + 5, w, h, "#A380C0", False]  #column 10
         ]
 
         self._rect_brush      = QBrush(QColor("#333333"))
@@ -1027,11 +1023,11 @@ class BrushPopSelector(PopSelector):
         self._rect_pen.setWidth(1)
 
     def  _draw_decorator(self, painter):
-        self._draw_text_label(painter, 5, "Style")
+        self._draw_text_label(painter, 10, 5, "Style")
         for rect_set in self._pattern_list:
-            x, y, w, h, style    = rect_set
-            self._selected_value = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
-            pen, brush, style    = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
+            x, y, w, h, style, selected = rect_set
+            self._selected_value        = style if (self._clicked_pos and (self._clicked_pos in QRect(x, y, w, h))) else self._selected_value
+            pen, brush, style           = (self._hovered_pen, self._hovered_brush, style) if (self._hover_pos and self._hover_pos in QRect(x, y, w, h)) else (Qt.NoPen, Qt.NoBrush, style)
             painter.setPen(pen)
             painter.setBrush(brush)
             painter.drawRect(x-3, y-3, w+4, h+4)
@@ -1041,46 +1037,54 @@ class BrushPopSelector(PopSelector):
             painter.setBrush(self._rect_brush)
             painter.drawRect(x, y, w-3, h-3)
 
-        select_rect = None
-        self._draw_text_label(painter, 160, "Texture color")
-        for rect_set in self._texture_list:
-            x, y, w, h, color = rect_set
+        self._draw_color_bundle(painter, 10, 160, self._texture_list, "Texture color")
+        self._draw_color_bundle(painter, 10, 320, self._color_list,   "Base color")
+
+
+    def _draw_color_bundle(self, painter, x, y, item_list, text, spacing = 30):
+        selected_rect  = None
+        selected_color = None
+        hovered_rect   = None
+        hovered_color  = None
+        self._draw_text_label(painter, x-2, y, text)
+        for index, rect_set in enumerate(item_list):
+            rx, ry, rw, rh, color, selected = rect_set
+            rx, ry = (rx + x), (ry + y + spacing)
             
-            if (self._hover_pos and QRect(x, y, w, h).contains(self._hover_pos)):
-                select_rect = QRect(x, y, w, h)
+            self._texture_list[index][5] = True if (self._clicked_pos and QRect(rx, ry, rw, rh).contains(self._clicked_pos)) else False
+
+            if self._texture_list[index][5] == True:
+                selected_color, selected_rect = color, (rx, ry, rw, rh)
+
+            if (self._hover_pos and QRect(rx, ry, rw, rh).contains(self._hover_pos)):
+                hovered_color, hovered_rect = color, (rx, ry, rw, rh)
 
             painter.setPen(Qt.NoPen)
             painter.setBrush(QColor(color))
-            painter.drawRect(x,y,w,h) 
+            painter.drawRect(rx,ry,rw,rh) 
 
-        if select_rect :
-            painter.setPen(self._hovered_pen)
+        if selected_rect:
+            x, y, w, h = selected_rect
             painter.setBrush(Qt.NoBrush)
-            painter.drawRect(select_rect) 
-
-
-        self._draw_text_label(painter, 310, "Background color")
-        for rect_set in self._color_list:
-            x, y, w, h, color = rect_set
-
-            if (self._hover_pos and QRect(x, y, w, h).contains(self._hover_pos)):
-                select_rect = QRect(x, y, w, h)
-
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(color))
-            painter.drawRect(x,y,w,h)      
-
-        if select_rect :
+            painter.setPen(QColor("#FFFFFF"))
+            painter.drawRect(QRect(x + 1, y + 1, w - 2, h - 2))
             painter.setPen(self._hovered_pen)
-            painter.setBrush(Qt.NoBrush)
-            painter.drawRect(select_rect) 
+            painter.drawRect(QRect(x, y, w, h)) 
 
-    def _draw_text_label(self, painter, y, text):
+        if hovered_rect :
+            x, y, w, h = hovered_rect
+            painter.setBrush(Qt.NoBrush)
+            painter.setPen(QColor("#FFFFFF"))
+            painter.drawRect(QRect(x + 1, y + 1, w - 2, h - 2))
+            painter.setPen(self._hovered_pen)
+            painter.drawRect(QRect(x, y, w, h))
+
+    def _draw_text_label(self, painter, x, y, text):
         painter.setBrush(self._text_rect_brush)
         painter.setPen(self._text_rect_pen)
-        painter.drawRect(8, y, (self._width - 20), 20)
+        painter.drawRect(x, y, (self._width - 20), 20)
         painter.setPen(self._text_pen)
-        painter.drawText(13, y, (self._width - 20), 20, Qt.AlignLeft|Qt.AlignVCenter, text)
+        painter.drawText(x + 5, y, (self._width - 20), 20, Qt.AlignLeft|Qt.AlignVCenter, text)
 
     @property
     def value(self):
