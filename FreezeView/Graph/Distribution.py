@@ -17,42 +17,61 @@ class DistributionWidget(QWidget):
     def __init__(self,  parent=None):
         super(DistributionWidget, self).__init__(parent)
         # pg.setConfigOption('background', '#dddddd')
-        # pg.setConfigOption('foreground', '#656565')
+        pg.setConfigOption('foreground', '#656565')
         x = np.arange(1000)
         y = np.random.normal(size=(3, 1000))
-        plot_widget = pg.PlotWidget(title = 'pyqtgraph example: Histogram')
+        plot_widget = pg.PlotWidget()
         plot_widget2 = pg.PlotWidget(title = 'pyqtgraph example: Histogram')
-        plot_widget.setBackground(QColor("#dddddd"))
+        
         
 
 
         vals = np.hstack([np.random.normal(size=500), np.random.normal(size=260, loc=4)])
-        plot_widget.setLabel('right', '', units="", color='c', **{'font-size':'12pt', 'font':'Arial'})
-        plot_widget.setLabel('top', '', units="", color='c', **{'font-size':'12pt'})
-        plot_widget.setLabel('left', 'Current', units="A", color='c', **{'font-size':'10pt'})
-        plot_widget.setLabel('bottom', 'Current', units="A", color='c', **{'font-size':'12pt'})
-        
+
         plot_item   = plot_widget.getPlotItem()
         view_box    = plot_item.getViewBox()
+        title_item  = plot_item.titleLabel
         left_axis   = plot_item.getAxis('left')
         right_axis  = plot_item.getAxis('right')
         top_axis    = plot_item.getAxis('top')
         bottom_axis = plot_item.getAxis('bottom')
-        
-        default_label_style = {'font-size':'12', 'font-family':'Arial', 'color':'#656565'}
-        default_tick_style  = {'showValues':  True, 'tickLength': -3, 'tickTextOffset':  5, 'tickFont':'Arial'}
-        hidden_tick_style   = {'showValues': False, 'tickLength':  0, 'tickTextOffset':  5, 'tickFont':'Arial'}
 
-        left_axis.setLabel(  'label text', units='V', **default_label_style)
-        bottom_axis.setLabel('label text', units='V', **default_label_style)
-        left_axis.setStyle(  **default_tick_style)
-        right_axis.setStyle( **hidden_tick_style )
-        top_axis.setStyle(   **hidden_tick_style )
-        bottom_axis.setStyle(**default_tick_style)
+        plot_widget.showAxis('right',  show=True)
+        plot_widget.showAxis('top',    show=True)
+        plot_widget.showAxis('left',   show=True)
+        plot_widget.showAxis('bottom', show=True)
+
+        plot_widget.showLabel('right',  show=True)
+        plot_widget.showLabel('top',    show=True)
+        plot_widget.showLabel('left',   show=True)
+        plot_widget.showLabel('bottom', show=True)
+        title = pg.TextItem("123")
+        title.setAnchor(QPoint(6, 6))
+        plot_item.addItem(title)
+
         left_axis.setZValue(0)
         bottom_axis.setZValue(0)
         right_axis.setZValue(0)
         top_axis.setZValue(0)
+
+        plot_widget.setBackground(QColor("#dddddd"))
+        view_box.setBackgroundColor(QColor("#ffffff"))
+
+
+        default_label_style  = {'font-size':'12', 'font-family':'Arial', 'color':'#656565'}
+        default_tick_style   = {'showValues':  True, 'tickLength': -3, 'tickTextOffset':  5, 'tickFont':'Arial'}
+        hidden_tick_style    = {'showValues': False, 'tickLength':  0, 'tickTextOffset':  5, 'tickFont':'Arial'}
+
+
+        left_axis.setLabel(  'label text', units='V', **default_label_style)
+        bottom_axis.setLabel('label text', units='V', **default_label_style)
+        top_axis.setLabel(       **default_label_style)
+        right_axis.setLabel( '', **default_label_style)
+
+        left_axis.setStyle(**default_tick_style)
+        bottom_axis.setStyle(**default_tick_style)
+        top_axis.setStyle(**hidden_tick_style)
+        right_axis.setStyle(**hidden_tick_style)
 
         y,x = np.histogram(vals, bins=np.linspace(-3, 8, 40))
 
@@ -60,10 +79,36 @@ class DistributionWidget(QWidget):
 
         y = pg.pseudoScatter(vals, spacing=0.15)
         plot_widget2.plot(vals, y, pen=None, symbol='o', symbolSize=5, symbolPen=(255,255,255,200), symbolBrush=(0,0,255,150))
-        plot_widget.getPlotItem().getViewBox().setBackgroundColor(QColor("#ffffff"))
+        
         self.setLayout(HBox(plot_widget, plot_widget2))
 
 
+
+        label = pg.TextItem()
+        plot_item.addItem(label)
+        def mouseMoved(pos):
+            if plot_item.sceneBoundingRect().contains(pos):
+                point = view_box.mapSceneToView(pos)
+                # index = int(point.x())
+                # if index > 0 and index < len(data1):
+                
+                label.setText("(%0.1f, %0.1f)" % (point.x(), point.y()))
+                label.setPos(QPointF(point.x(), point.y() + 3))
+                vLine.setPos(point.x())
+                hLine.setPos(point.y())
+        
+        def updateRegion(window, viewRange):
+            region.setRegion(viewRange[0])
+
+        region = pg.LinearRegionItem()
+        vLine  = pg.InfiniteLine(angle=90, movable=False)
+        hLine  = pg.InfiniteLine(angle=0,  movable=False)
+        proxy  = pg.SignalProxy(plot_item.scene().sigMouseMoved, rateLimit=60, slot=mouseMoved)
+        plot_item.addItem(vLine, ignoreBounds=True)
+        plot_item.addItem(hLine, ignoreBounds=True)
+        plot_item.scene().sigMouseMoved.connect(mouseMoved)
+        vLine.setPen(pg.mkPen(color = pg.mkColor("#aaaaaa"), style = Qt.DotLine))
+        hLine.setPen(pg.mkPen(color = pg.mkColor("#aaaaaa"), style = Qt.DotLine))        
 
 if __name__ == "__main__":
     def Debugger():
