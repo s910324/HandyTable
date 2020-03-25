@@ -29,6 +29,7 @@ class DistributionWidget(QWidget):
         vals = np.hstack([np.random.normal(size=500), np.random.normal(size=260, loc=4)])
 
         plot_item   = plot_widget.getPlotItem()
+        plot_item2  = plot_widget2.getPlotItem()
         view_box    = plot_item.getViewBox()
         title_item  = plot_item.titleLabel
         left_axis   = plot_item.getAxis('left')
@@ -53,6 +54,9 @@ class DistributionWidget(QWidget):
         bottom_axis.setZValue(0)
         right_axis.setZValue(0)
         top_axis.setZValue(0)
+        # view_box.setYLink(plot_item2.getViewBox())
+        view_box.setXLink(plot_item2.getViewBox())
+        
 
         plot_widget.setBackground(QColor("#dddddd"))
         view_box.setBackgroundColor(QColor("#ffffff"))
@@ -89,9 +93,6 @@ class DistributionWidget(QWidget):
         def mouseMoved(pos):
             if plot_item.sceneBoundingRect().contains(pos):
                 point = view_box.mapSceneToView(pos)
-                # index = int(point.x())
-                # if index > 0 and index < len(data1):
-                
                 label.setText("(%0.1f, %0.1f)" % (point.x(), point.y()))
                 label.setPos(QPointF(point.x(), point.y() + 3))
                 vLine.setPos(point.x())
