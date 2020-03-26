@@ -23,21 +23,18 @@ class DistributionWidget(QWidget):
         # pg.setConfigOption('background', '#dddddd')
         pg.setConfigOption('foreground', '#656565')
         csv = pd.read_csv(r'C:\Users\rawr\Downloads\MOCK_DATA (4).csv')
-        s = Statistic(data = csv.iloc[:, 0], spec_high=30, spec_low=20)
-        print (s)
+        s1 = Statistic(data = csv.iloc[:, 3], spec_high=30, spec_low=20)
+        s2 = Statistic(data = csv.iloc[:, 2], spec_high=30, spec_low=20)
 
-        x = np.arange(1000)
-        y = np.random.normal(size=(3, 1000))
+        def g(data):
+            d    = (data.frequency_chart(scale = [15, 40, 1]))
+            x, y = [ ix for ix, iy in d], [ iy for ix, iy in d]
+            return x, y
+
+
         plot_widget  = pg.PlotWidget()
-        plot_widget2 = pg.PlotWidget(title = 'pyqtgraph example: Histogram')
-        
-        
-
-
-        vals = np.hstack([np.random.normal(size=500), np.random.normal(size=260, loc=4)])
 
         plot_item   = plot_widget.getPlotItem()
-        plot_item2  = plot_widget2.getPlotItem()
         view_box    = plot_item.getViewBox()
         title_item  = plot_item.titleLabel
         left_axis   = plot_item.getAxis('left')
@@ -59,15 +56,11 @@ class DistributionWidget(QWidget):
         plot_item.addItem(title)
 
 
-
         left_axis.setZValue(0)
         bottom_axis.setZValue(0)
         right_axis.setZValue(0)
         top_axis.setZValue(0)
-        # view_box.setYLink(plot_item2.getViewBox())
-        view_box.setXLink(plot_item2.getViewBox())
         
-
         plot_widget.setBackground(QColor("#dddddd"))
         view_box.setBackgroundColor(QColor("#ffffff"))
 
@@ -87,13 +80,15 @@ class DistributionWidget(QWidget):
         top_axis.setStyle(**hidden_tick_style)
         right_axis.setStyle(**hidden_tick_style)
 
-        y,x = np.histogram(vals, bins=np.linspace(-3, 8, 40))
 
-        k= plot_widget.plot(x, y, stepMode=True, fillLevel=0, brush=(0,0,255,150))
-        y = pg.pseudoScatter(vals, spacing=0.5)
-        plot_widget2.plot(vals, y, pen=None, symbol='o', symbolSize=5, symbolPen=(255,255,255,200), symbolBrush=(0,0,255,150))
-        
-        view_box.autoRange(padding = 0, items = [k])
+        x, y = g(s1)
+        j = pg.BarGraphItem(x=x, height=y, width=0.5, brush=(253,6,200, 100))
+        plot_widget.addItem(j)
+        x, y = g(s2)
+        k = pg.BarGraphItem(x=np.array(x)+0.5, height=y, width=0.5, brush=(6,184,253, 100))
+        plot_widget.addItem(k)
+
+        view_box.autoRange(padding = 0, items = [j, k])
         view_box.disableAutoRange('xy')      
         x_range, y_range = view_box.viewRange()
         x_min, x_max     = x_range
@@ -105,18 +100,17 @@ class DistributionWidget(QWidget):
         view_box.setYRange(y_min, y_max, padding = 0)
 
         
-        self.setLayout(HBox(plot_widget, plot_widget2))
+        self.setLayout(HBox(plot_widget))#, plot_widget2))
 
 
 
-        label = pg.TextItem()
+        label = pg.TextItem(anchor = (0, 1))
         plot_item.addItem(label)
         def mouseMoved(pos):
             if view_box.sceneBoundingRect().contains(pos):
                 point = view_box.mapSceneToView(pos)
-
                 label.setText("(%0.1f, %0.1f)" % (point.x(), point.y()))
-                label.setPos(QPointF(point.x(), point.y() + 3))
+                label.setPos(QPointF(point.x(), point.y()))
                 vLine.setPos(point.x())
                 hLine.setPos(point.y())
         
