@@ -3,6 +3,7 @@ import os
 import sys
 import math
 import numpy           as np
+import pandas          as pd
 import pyqtgraph       as pg
 from   PyQt5.QtWidgets import *
 from   PyQt5.QtCore    import *
@@ -10,7 +11,10 @@ from   PyQt5.QtGui     import *
 from   pyqtgraph.Qt    import QtCore, QtGui
 
 sys.path.append("../")
-from uiplus import HBox, VBox, BoxLayout
+sys.path.append("../../../AllmightDataProcesser/")
+from uiplus   import HBox, VBox, BoxLayout
+from allmight import  *
+
 
 class DistributionWidget(QWidget):
     valueSelected = pyqtSignal(object)
@@ -18,9 +22,13 @@ class DistributionWidget(QWidget):
         super(DistributionWidget, self).__init__(parent)
         # pg.setConfigOption('background', '#dddddd')
         pg.setConfigOption('foreground', '#656565')
+        csv = pd.read_csv(r'C:\Users\rawr\Downloads\MOCK_DATA (4).csv')
+        s = Statistic(data = csv.iloc[:, 0], spec_high=30, spec_low=20)
+        print (s)
+
         x = np.arange(1000)
         y = np.random.normal(size=(3, 1000))
-        plot_widget = pg.PlotWidget()
+        plot_widget  = pg.PlotWidget()
         plot_widget2 = pg.PlotWidget(title = 'pyqtgraph example: Histogram')
         
         
@@ -49,6 +57,8 @@ class DistributionWidget(QWidget):
         title = pg.TextItem("123")
         title.setAnchor(QPoint(6, 6))
         plot_item.addItem(title)
+
+
 
         left_axis.setZValue(0)
         bottom_axis.setZValue(0)
@@ -79,10 +89,21 @@ class DistributionWidget(QWidget):
 
         y,x = np.histogram(vals, bins=np.linspace(-3, 8, 40))
 
-        plot_widget.plot(x, y, stepMode=True, fillLevel=0, brush=(0,0,255,150))
-
-        y = pg.pseudoScatter(vals, spacing=0.15)
+        k= plot_widget.plot(x, y, stepMode=True, fillLevel=0, brush=(0,0,255,150))
+        y = pg.pseudoScatter(vals, spacing=0.5)
         plot_widget2.plot(vals, y, pen=None, symbol='o', symbolSize=5, symbolPen=(255,255,255,200), symbolBrush=(0,0,255,150))
+        
+        view_box.autoRange(padding = 0, items = [k])
+        view_box.disableAutoRange('xy')      
+        x_range, y_range = view_box.viewRange()
+        x_min, x_max     = x_range
+        y_min, y_max     = y_range
+        y_spam           = (y_max - y_min) * 0.05
+        y_min, y_max     = (y_min if (y_min - 0) < 0.2  else y_min - y_spam),  y_max + y_spam
+
+        view_box.setXRange(x_min, x_max, padding = 0)
+        view_box.setYRange(y_min, y_max, padding = 0)
+
         
         self.setLayout(HBox(plot_widget, plot_widget2))
 
@@ -91,8 +112,9 @@ class DistributionWidget(QWidget):
         label = pg.TextItem()
         plot_item.addItem(label)
         def mouseMoved(pos):
-            if plot_item.sceneBoundingRect().contains(pos):
+            if view_box.sceneBoundingRect().contains(pos):
                 point = view_box.mapSceneToView(pos)
+
                 label.setText("(%0.1f, %0.1f)" % (point.x(), point.y()))
                 label.setPos(QPointF(point.x(), point.y() + 3))
                 vLine.setPos(point.x())
