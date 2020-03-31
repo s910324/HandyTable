@@ -9,7 +9,8 @@ from   PyQt5.QtWidgets import *
 from   PyQt5.QtCore    import *
 from   PyQt5.QtGui     import *
 from   pyqtgraph.Qt    import QtCore, QtGui
-
+from   scipy.optimize  import curve_fit
+import matplotlib.pyplot as plt
 sys.path.append("../")
 sys.path.append("../../../AllmightDataProcesser/")
 from uiplus   import HBox, VBox, BoxLayout
@@ -55,19 +56,42 @@ class DistributionWidget(QWidget):
 
 
         csv = pd.read_csv(r'C:\Users\rawr\Downloads\MOCK_DATA (4).csv')
-        s1 = Statistic(data = csv.iloc[:, 3], spec_high=30, spec_low=20)
-        s2 = Statistic(data = csv.iloc[:, 2], spec_high=30, spec_low=20)
-        s3 = Statistic(data = csv.iloc[:, 1], spec_high=30, spec_low=20)
-        s4 = Statistic(data = csv.iloc[:, 0], spec_high=30, spec_low=20)
+        h, l = 45, 10
+        s1 = Statistic(data = csv.iloc[:, 3], spec_high=h, spec_low=l)
+        s2 = Statistic(data = csv.iloc[:, 2], spec_high=h, spec_low=l)
+        s3 = Statistic(data = csv.iloc[:, 1], spec_high=h, spec_low=l)
+        s4 = Statistic(data = csv.iloc[:, 0], spec_high=h, spec_low=l)
+        popt, pcov = self.f(s1)
+        scale = 10
+        x = [i/scale for i in range(0 * scale, 50 * scale, 1)]
+
         self._plot_widget1.AddData(self.g(s1))
         self._plot_widget1.AddData(self.g(s2))
         self._plot_widget1.AddData(self.g(s3))
         self._plot_widget1.AddData(self.g(s4))
 
+        self._plot_widget1.addItem(pg.PlotCurveItem(x,self.gauss_function(x,*popt), pen = pg.mkPen(QColor("#323232"))))
+        # self._plot_widget1.AddData2(s1)
+        # self._plot_widget1.AddData2(s2)
+        # self._plot_widget1.AddData2(s3)
+        # self._plot_widget1.AddData2(s4)
+        # self._plot_widget1.UpdateChartRange()
     def g(self, data):
         d    = (data.frequency_chart(scale = [15, 40, 1]))
+        # print (data.ca, data.cp, data.cpk)
         x, y = [ ix for ix, iy in d], [ iy for ix, iy in d]
         return x, y
+
+    def f(self, data):
+        mean       = data.avg
+        sigma      = data.std
+        x, y       = self.g(data)
+        popt, pcov = curve_fit(self.gauss_function, x, y, p0=[1,mean,sigma])
+        return popt, pcov
+
+    def gauss_function(self, x, a, x0, sigma):
+        return a*np.exp(-(x-x0)**2/(2*sigma**2))
+    
 
     def setSpec(self):
         h = float(self._spec_h.text())
@@ -107,6 +131,7 @@ class DistributionChartWidget(pg.PlotWidget):
         self._spec_h_line       = pg.InfiniteLine(angle = 90, movable = False)
         self._target_line       = pg.InfiniteLine(angle = 90, movable = False)
         self._spec_l_line       = pg.InfiniteLine(angle = 90, movable = False)     
+        self._x_scale           = {'start': None, 'stop': None, 'step': None}        
         self._color_theme       = [(255, 6, 120, 100), (255, 172, 0, 100), (0, 189, 255, 100), (0, 80, 255, 100), (189, 0, 255, 100), (130, 130, 130, 100)]
         self._init_()
         self.CrosshairVisible()
@@ -126,11 +151,54 @@ class DistributionChartWidget(pg.PlotWidget):
         for axis in ['left', 'right', 'top', 'bottom']:
             self.PlotItem.showAxis(axis)
 
+    def AddData2(self, data):
+        print(self.isVisible ())
+        if (type(data) in (list, np.array, Statistic)):
+            data = Statistic(data)
+            self._chart_data.append({"data":data, "chart_item": None})
+        else:
+            raise TypeError("item %s with object type %s is not supported) " % (spec_list, type(spec_list))) 
+
+    def UpdateChartRange(self, scale = None):
+        update_scale        = True if (self._x_scale['start'] == None) and (scale == None) else False
+        [start, stop, step] = scale if not update_scale else [self._x_scale['start'], self._x_scale['stop'], self._x_scale['step']]
+
+        for index, package in enumerate(self._chart_data):
+            data  = package['data']
+            chart = package['chart_item']
+            
+            if not(chart == None) and (chart in self.PlotItem.items()) : self.PlotItem.removeItem(item)
+
+            if update_scale:
+                start = min(data) if (start == None) or (min(data) > start) else start
+                stop  = max(data) if (stop  == None) or (max(data) >  stop) else  stop
+
+        step = ((stop - start) / 15) if step == None else step
+
+        for index, package in enumerate(self._chart_data):
+            data  = package['data']
+            chart = package['chart_item']
+            freq  = data.frequency_chart(scale = [start, stop, step])
+            x, y  = [ ix for ix, iy in freq], [ iy for ix, iy in freq]
+        
+            chart = pg.BarGraphItem(x=np.array(x), height=y, width=step, brush = self._color_theme[index], x_offset = 0)
+            self.addItem(chart)
+            self._chart_data[index].update({"chart_item": chart})
+
+        self._bar_width        = step
+        self.AxisRange         = [None, None]
+        self.Spec              = 20, 27, 34
+        self.SpecHLineVisible  = True
+        self.TargetLineVisible = True
+        self.SpecLLineVisible  = True
+        self.CrosshairVisible(self._crosshair_visible)  
+
+
     def AddData(self, data):
         x, y  = data
         chart = pg.BarGraphItem(x=np.array(x), height=y, width=self._bar_width, brush = self._color_theme[len(self)], x_offset = 0)
         self.addItem(chart)
-        self._charts.append(chart)
+        self._chart_data.append({"data":data, "chart_item": chart})
         self.AxisRange = [None, None]
         self.CrosshairVisible(self._crosshair_visible)
         self.Spec              = 20, 27, 34
@@ -141,7 +209,7 @@ class DistributionChartWidget(pg.PlotWidget):
 
     
     def __len__(self):
-        return len(self._charts)
+        return len(self._chart_data)
     
 
     @property
@@ -150,10 +218,10 @@ class DistributionChartWidget(pg.PlotWidget):
 
     @BarWidth.setter
     def BarWidth(self, width):
-        if  (0 < float(width) <= 1):
+        if  (0 < float(width)):
             self._bar_width = width
-            for chart in self._charts:
-                chart.setOpts(width= width)
+            for package in self._chart_data:
+                if package['chart_item'] : package['chart_item'].setOpts(width= width)
 
     @property
     def BarOffset(self):
@@ -161,12 +229,14 @@ class DistributionChartWidget(pg.PlotWidget):
 
     @BarOffset.setter
     def BarOffset(self, offset):
-        if  (0 < float(offset) <= 1):
+        if  (0 <= float(offset)):
             self._bar_offset = offset
-            for index, chart in enumerate(self._charts):
-                x, old_offset, new_offset = chart.opts['x'], chart.opts['x_offset'], (self._bar_offset * index)
-                delta                     = new_offset - old_offset
-                chart.setOpts(x = np.array(x) + delta, x_offset = new_offset)
+            for index, package in enumerate(self._chart_data):
+                chart = package['chart_item']
+                if chart:
+                    x, old_offset, new_offset = chart.opts['x'], chart.opts['x_offset'], (self._bar_offset * index)
+                    delta                     = new_offset - old_offset
+                    chart.setOpts(x = np.array(x) + delta, x_offset = new_offset)
 
     def CrosshairVisible(self, visible = True):
         self._crosshair_visible = visible
@@ -359,7 +429,7 @@ if __name__ == "__main__":
         pyqtgraph.examples.run()   
 
     def tester2():
-        print(Type(NoneType))
+        print (None > 0)
 
     Debugger()    
     # tester1()
