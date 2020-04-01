@@ -9,12 +9,11 @@ from   PyQt5.QtWidgets import *
 from   PyQt5.QtCore    import *
 from   PyQt5.QtGui     import *
 from   pyqtgraph.Qt    import QtCore, QtGui
-from   scipy.optimize  import curve_fit
 import matplotlib.pyplot as plt
 sys.path.append("../")
 sys.path.append("../../../AllmightDataProcesser/")
 from uiplus   import HBox, VBox, BoxLayout
-from allmight import  *
+from allmight import *
 
 #distribution chart
     #spec line
@@ -65,12 +64,12 @@ class DistributionWidget(QWidget):
         scale = 10
         x = [i/scale for i in range(0 * scale, 50 * scale, 1)]
 
-        self._plot_widget1.AddData(self.g(s1))
-        self._plot_widget1.AddData(self.g(s2))
-        self._plot_widget1.AddData(self.g(s3))
-        self._plot_widget1.AddData(self.g(s4))
+        self._plot_widget1.AddBarChart(self.g(s1))
+        self._plot_widget1.AddBarChart(self.g(s2))
+        self._plot_widget1.AddBarChart(self.g(s3))
+        self._plot_widget1.AddBarChart(self.g(s4))
 
-        self._plot_widget1.addItem(pg.PlotCurveItem(x,self.gauss_function(x,*popt), pen = pg.mkPen(QColor("#323232"))))
+        self._plot_widget1.AddScatterCurveChart([x,self.gauss_function(x,*popt)])
         # self._plot_widget1.AddData2(s1)
         # self._plot_widget1.AddData2(s2)
         # self._plot_widget1.AddData2(s3)
@@ -83,10 +82,8 @@ class DistributionWidget(QWidget):
         return x, y
 
     def f(self, data):
-        mean       = data.avg
-        sigma      = data.std
         x, y       = self.g(data)
-        popt, pcov = curve_fit(self.gauss_function, x, y, p0=[1,mean,sigma])
+        popt, pcov = Fitting.fit_gaussian(x, y, data.avg, data.std)
         return popt, pcov
 
     def gauss_function(self, x, a, x0, sigma):
@@ -194,19 +191,29 @@ class DistributionChartWidget(pg.PlotWidget):
         self.CrosshairVisible(self._crosshair_visible)  
 
 
-    def AddData(self, data):
+    def AddBarChart(self, data, bar_width = None, brush = None, offset = 0, name = None):
         x, y  = data
-        chart = pg.BarGraphItem(x=np.array(x), height=y, width=self._bar_width, brush = self._color_theme[len(self)], x_offset = 0)
+        chart = pg.BarGraphItem(x=np.array(x), height=np.array(y), width=(self._bar_width if bar_width == None else bar_width), brush = (self._color_theme[len(self)] if brush == None else brush), x_offset = offset)
         self.addItem(chart)
         self._chart_data.append({"data":data, "chart_item": chart})
+        return chart
+
+    def AddScatterCurveChart(self, data, symbol = 'o', line_pen = None, symbol_pen= None, symbol_brush= None, symbol_size= 3, name= None):
+        x, y  = data
+        chart_scatter = pg.ScatterPlotItem( np.array(x), np.array(y), pen = pg.mkPen(QColor("#323232")), symbol = symbol, size =  symbol_size, symbolPen='w')
+        chart_curve   = pg.PlotCurveItem(   np.array(x), np.array(y), pen = pg.mkPen(QColor("#323232")))
+        self.addItem(chart_scatter)
+        self.addItem(chart_curve)
+        self._chart_data.append({"data":data, "chart_item": [chart_scatter, chart_curve]})
+        return [chart_scatter, chart_curve]
+
+    def xx(self):
         self.AxisRange = [None, None]
         self.CrosshairVisible(self._crosshair_visible)
         self.Spec              = 20, 27, 34
         self.SpecHLineVisible  = True
         self.TargetLineVisible = True
         self.SpecLLineVisible  = True
-        return chart
-
     
     def __len__(self):
         return len(self._chart_data)
@@ -221,7 +228,8 @@ class DistributionChartWidget(pg.PlotWidget):
         if  (0 < float(width)):
             self._bar_width = width
             for package in self._chart_data:
-                if package['chart_item'] : package['chart_item'].setOpts(width= width)
+                if package['chart_item'] and type(package['chart_item']) == pg.BarGraphItem:
+                    package['chart_item'].setOpts(width= width)
 
     @property
     def BarOffset(self):
@@ -233,7 +241,7 @@ class DistributionChartWidget(pg.PlotWidget):
             self._bar_offset = offset
             for index, package in enumerate(self._chart_data):
                 chart = package['chart_item']
-                if chart:
+                if chart and type(chart) == pg.BarGraphItem:
                     x, old_offset, new_offset = chart.opts['x'], chart.opts['x_offset'], (self._bar_offset * index)
                     delta                     = new_offset - old_offset
                     chart.setOpts(x = np.array(x) + delta, x_offset = new_offset)
